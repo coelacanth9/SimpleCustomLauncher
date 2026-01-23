@@ -10,6 +10,51 @@ import kotlin.collections.get
 
 class CalendarRepository(private val context: Context) {
 
+    // 英語の祝日名から日本語への変換マップ
+    private val holidayTranslations = mapOf(
+        "New Year's Day" to "元日",
+        "Coming of Age Day" to "成人の日",
+        "National Foundation Day" to "建国記念の日",
+        "The Emperor's Birthday" to "天皇誕生日",
+        "Vernal Equinox Day" to "春分の日",
+        "Showa Day" to "昭和の日",
+        "Constitution Memorial Day" to "憲法記念日",
+        "Greenery Day" to "みどりの日",
+        "Children's Day" to "こどもの日",
+        "Marine Day" to "海の日",
+        "Mountain Day" to "山の日",
+        "Respect for the Aged Day" to "敬老の日",
+        "Autumnal Equinox Day" to "秋分の日",
+        "Sports Day" to "スポーツの日",
+        "Culture Day" to "文化の日",
+        "Labour Thanksgiving Day" to "勤労感謝の日",
+        "Labor Thanksgiving Day" to "勤労感謝の日",
+        // 振替休日
+        "Holiday in lieu" to "振替休日",
+        "Substitute Holiday" to "振替休日"
+    )
+
+    // 祝日名を日本語に変換（既に日本語なら変換しない）
+    private fun translateHolidayName(name: String): String {
+        // 完全一致で翻訳
+        holidayTranslations[name]?.let { return it }
+
+        // 部分一致で翻訳（"observed" などが付いている場合）
+        for ((english, japanese) in holidayTranslations) {
+            if (name.contains(english, ignoreCase = true)) {
+                return if (name.contains("observed", ignoreCase = true) ||
+                           name.contains("lieu", ignoreCase = true)) {
+                    "振替休日"
+                } else {
+                    japanese
+                }
+            }
+        }
+
+        // 翻訳がない場合はそのまま返す
+        return name
+    }
+
     fun getHolidaysForMonth(year: Int, month: Int): Map<Int, String> {
         val holidayMap = mutableMapOf<Int, String>()
 
@@ -50,15 +95,19 @@ class CalendarRepository(private val context: Context) {
                     val date = java.time.Instant.ofEpochMilli(begin)
                         .atZone(java.time.ZoneId.systemDefault()).toLocalDate()
 
-                    // 判定条件を広げる：
-                    // 「祝日」や「の日」が含まれるか、
-                    // あるいはカレンダー名自体に "Holidays" と入っているイベントは全部表示する
-                    if (title.contains("祝日") ||
-                        title.contains("の日") ||
-                        title.contains("振替") ||
-                        calName.contains("Holidays", ignoreCase = true)) {
+                    // 日本の祝日かどうかを判定
+                    val isJapaneseHolidayCalendar = calName.contains("Japan", ignoreCase = true) ||
+                            calName.contains("日本", ignoreCase = true)
+                    val isJapaneseHolidayTitle = title.contains("祝日") ||
+                            title.contains("の日") ||
+                            title.contains("振替") ||
+                            title.contains("元日") ||
+                            holidayTranslations.containsKey(title)  // 英語でも日本の祝日名ならOK
 
-                        holidayMap[date.dayOfMonth] = title
+                    // 日本の祝日カレンダーのイベント、または日本の祝日名を含むイベントのみ表示
+                    if (isJapaneseHolidayCalendar || isJapaneseHolidayTitle) {
+                        // 英語の祝日名を日本語に変換
+                        holidayMap[date.dayOfMonth] = translateHolidayName(title)
                     }
                 }
             }

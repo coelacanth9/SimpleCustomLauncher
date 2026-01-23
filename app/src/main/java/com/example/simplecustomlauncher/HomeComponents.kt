@@ -1,11 +1,21 @@
 package com.example.simplecustomlauncher
 
+import android.content.Intent
+import android.provider.Settings
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -21,7 +31,13 @@ import java.util.Locale
 import kotlinx.coroutines.delay
 
 @Composable
-fun HomeHeader(context: android.content.Context) {
+fun HomeHeader(
+    context: android.content.Context,
+    isEditMode: Boolean = false,
+    onEditDone: () -> Unit = {},
+    onAddRow: () -> Unit = {},
+    onAppSettings: () -> Unit = {}
+) {
     // 現在時刻を保持するステート
     var currentDateTime by remember { mutableStateOf(LocalDateTime.now()) }
 
@@ -47,14 +63,44 @@ fun HomeHeader(context: android.content.Context) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 10.dp, bottom = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(bottom = 10.dp)
     ) {
-        // 1. 日付
+        // 1. 設定ボタン行
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "アプリ設定",
+                fontSize = 14.sp,
+                color = Color.Gray,
+                modifier = Modifier
+                    .clickable { onAppSettings() }
+                    .padding(8.dp)
+            )
+            Text(
+                text = "スマホ設定",
+                fontSize = 14.sp,
+                color = Color.Gray,
+                modifier = Modifier
+                    .clickable {
+                        val intent = Intent(Settings.ACTION_SETTINGS).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        }
+                        context.startActivity(intent)
+                    }
+                    .padding(8.dp)
+            )
+        }
+
+        // 2. 日付
         Text(
             text = currentDateTime.format(dateFormatter),
             fontSize = 28.sp,
-            color = Color.Black
+            color = Color.Black,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
         )
 
         // 祝日があってもなくても、日付の下に一定のスペースを作る
@@ -63,7 +109,8 @@ fun HomeHeader(context: android.content.Context) {
         if (holidayName != null) {
             Surface(
                 color = Color(0xFFFFEBEE),
-                shape = RoundedCornerShape(4.dp)
+                shape = RoundedCornerShape(4.dp),
+                modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 Text(
                     text = holidayName,
@@ -78,11 +125,51 @@ fun HomeHeader(context: android.content.Context) {
             Spacer(modifier = Modifier.height(28.dp))
         }
 
-        // 2. 時計
-        Text(
-            text = currentDateTime.format(timeFormatter),
-            fontSize = 72.sp,
-            fontWeight = FontWeight.Bold
-        )
+        // 3. 時計 or 編集ボタン群
+        if (isEditMode) {
+            // 編集モード時は「編集完了」「行追加」を横並び
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                // 編集完了ボタン
+                Surface(
+                    modifier = Modifier.clickable { onEditDone() },
+                    color = Color(0xFFFF9800),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "編集完了",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.size(16.dp))
+                // 行追加ボタン
+                Surface(
+                    modifier = Modifier.clickable { onAddRow() },
+                    color = Color(0xFF4CAF50),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "＋行追加",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
+                    )
+                }
+            }
+        } else {
+            // 通常時は時計
+            Text(
+                text = currentDateTime.format(timeFormatter),
+                fontSize = 72.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+        }
     }
 }
