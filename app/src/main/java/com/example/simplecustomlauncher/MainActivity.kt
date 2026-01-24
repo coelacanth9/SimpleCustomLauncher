@@ -42,6 +42,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         shortcutRepository = ShortcutRepository(this)
 
+        // 初回起動時にデフォルトレイアウトを適用
+        if (shortcutRepository.isFirstLaunch()) {
+            shortcutRepository.applyDefaultLayout()
+        }
+
         // 起動時のIntentを処理
         handleIntent(intent)
 
@@ -197,9 +202,11 @@ fun MainLauncherScreen() {
 
         is MainScreenState.SlotEdit -> {
             val otherPlacedShortcuts = viewModel.getPlacedShortcuts().filter { it.id != state.currentShortcut?.id }
+            val currentColumns = viewModel.getLayoutConfig().getColumnsForRow(state.row)
 
             SlotEditScreen(
                 currentShortcut = state.currentShortcut,
+                currentColumns = currentColumns,
                 unplacedShortcuts = viewModel.getUnplacedShortcuts(),
                 placedShortcuts = otherPlacedShortcuts,
                 onSelectUnplaced = { shortcut ->
@@ -230,6 +237,10 @@ fun MainLauncherScreen() {
                     state.currentShortcut?.let { viewModel.clearSlot(it) }
                     viewModel.navigateToHome()
                 },
+                onChangeColumns = { newColumns ->
+                    viewModel.changeRowColumns(state.row, newColumns)
+                    viewModel.navigateToHome()
+                },
                 onDeleteRow = {
                     viewModel.deleteRow(state.row)
                     viewModel.navigateToHome()
@@ -254,7 +265,10 @@ fun MainLauncherScreen() {
 
         is MainScreenState.AppSettings -> {
             AppSettingsScreen(
-                onBack = { viewModel.navigateToHome() }
+                onBack = { viewModel.navigateToHome() },
+                onEnterEditMode = { viewModel.enterEditMode() },
+                onResetToDefault = { viewModel.resetToDefault() },
+                onClearLayout = { viewModel.clearLayout() }
             )
         }
     }

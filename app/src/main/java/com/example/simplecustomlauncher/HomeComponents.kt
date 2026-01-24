@@ -65,7 +65,7 @@ fun HomeHeader(
             .fillMaxWidth()
             .padding(bottom = 10.dp)
     ) {
-        // 1. 設定ボタン行
+        // 1. 設定ボタン行（編集モード中は無効）
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -75,22 +75,26 @@ fun HomeHeader(
             Text(
                 text = "アプリ設定",
                 fontSize = 14.sp,
-                color = Color.Gray,
+                color = if (isEditMode) Color.LightGray else Color.Gray,
                 modifier = Modifier
-                    .clickable { onAppSettings() }
+                    .then(
+                        if (!isEditMode) Modifier.clickable { onAppSettings() } else Modifier
+                    )
                     .padding(8.dp)
             )
             Text(
                 text = "スマホ設定",
                 fontSize = 14.sp,
-                color = Color.Gray,
+                color = if (isEditMode) Color.LightGray else Color.Gray,
                 modifier = Modifier
-                    .clickable {
-                        val intent = Intent(Settings.ACTION_SETTINGS).apply {
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                        }
-                        context.startActivity(intent)
-                    }
+                    .then(
+                        if (!isEditMode) Modifier.clickable {
+                            val intent = Intent(Settings.ACTION_SETTINGS).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            }
+                            context.startActivity(intent)
+                        } else Modifier
+                    )
                     .padding(8.dp)
             )
         }

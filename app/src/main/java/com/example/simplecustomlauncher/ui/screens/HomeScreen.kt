@@ -1,13 +1,12 @@
 package com.example.simplecustomlauncher.ui.screens
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -175,7 +174,6 @@ private fun HomeContent(
                         }
                     }
                 },
-                onShortcutLongClick = { viewModel.showEditModeConfirmDialog() },
                 onEmptyClick = { column ->
                     viewModel.navigateToShortcutAdd(rowConfig.rowIndex, column)
                 },
@@ -188,7 +186,6 @@ private fun HomeContent(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HomeRow(
     rowConfig: RowConfig,
@@ -196,7 +193,6 @@ private fun HomeRow(
     shortcuts: Map<String, ShortcutItem>,
     isEditMode: Boolean,
     onShortcutClick: (ShortcutItem) -> Unit,
-    onShortcutLongClick: () -> Unit,
     onEmptyClick: (column: Int) -> Unit,
     onSlotClickInEditMode: (row: Int, column: Int, currentShortcut: ShortcutItem?) -> Unit,
     modifier: Modifier = Modifier
@@ -221,8 +217,7 @@ private fun HomeRow(
                             } else {
                                 onShortcutClick(shortcut)
                             }
-                        },
-                        onLongClick = { if (!isEditMode) onShortcutLongClick() }
+                        }
                     )
                 } else {
                     EmptySlotButton(
@@ -233,8 +228,7 @@ private fun HomeRow(
                             } else {
                                 onEmptyClick(colIndex)
                             }
-                        },
-                        onLongClick = { if (!isEditMode) onShortcutLongClick() }
+                        }
                     )
                 }
             }
@@ -242,14 +236,12 @@ private fun HomeRow(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ShortcutButton(
     item: ShortcutItem,
     columns: Int,
     isEditMode: Boolean,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit
+    onClick: () -> Unit
 ) {
     val context = LocalContext.current
     val shortcutHelper = remember { ShortcutHelper(context) }
@@ -259,25 +251,10 @@ private fun ShortcutButton(
         item.packageName?.let { shortcutHelper.getAppIcon(it) }
     }
 
-    // サイズ設定
-    val iconSize = when (columns) {
-        1 -> 56.dp
-        2 -> 40.dp
-        else -> 36.dp
-    }
-    val labelSize = when (columns) {
-        1 -> 24.sp
-        2 -> 14.sp
-        else -> 12.sp
-    }
-
     Card(
         modifier = Modifier
             .fillMaxSize()
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
-            )
+            .clickable(onClick = onClick)
             .then(
                 if (isEditMode) Modifier.border(
                     width = 3.dp,
@@ -289,28 +266,35 @@ private fun ShortcutButton(
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Box(
+        BoxWithConstraints(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(12.dp)
+                .padding(8.dp)
         ) {
+            // ボタンサイズから動的にアイコン・文字サイズを計算
+            val buttonHeight = maxHeight
+            val buttonWidth = maxWidth
+
             when (columns) {
                 1 -> {
-                    // 横並びレイアウト
+                    // 横並びレイアウト（1列）
+                    val iconSize = buttonHeight * 0.55f
+                    val labelSize = (buttonHeight.value * 0.22f).sp
+
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         Box(
-                            modifier = Modifier.width(64.dp),
+                            modifier = Modifier.weight(0.3f),
                             contentAlignment = Alignment.Center
                         ) {
                             ShortcutIcon(item = item, appIcon = appIcon, size = iconSize)
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
                         Box(
-                            modifier = Modifier.width(160.dp),
+                            modifier = Modifier.weight(0.7f),
                             contentAlignment = Alignment.CenterStart
                         ) {
                             Column {
@@ -326,7 +310,7 @@ private fun ShortcutButton(
                                     Text(
                                         text = "タップで編集",
                                         color = Color(0xFFFF9800),
-                                        fontSize = 12.sp
+                                        fontSize = (buttonHeight.value * 0.12f).sp
                                     )
                                 }
                             }
@@ -334,10 +318,14 @@ private fun ShortcutButton(
                     }
                 }
                 2 -> {
-                    // 縦並びレイアウト
+                    // 縦並びレイアウト（2列）
+                    val iconSize = minOf(buttonHeight * 0.5f, buttonWidth * 0.6f)
+                    val labelSize = (buttonHeight.value * 0.14f).sp
+
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         ShortcutIcon(item = item, appIcon = appIcon, size = iconSize)
                         Spacer(modifier = Modifier.height(4.dp))
@@ -351,19 +339,30 @@ private fun ShortcutButton(
                             overflow = TextOverflow.Ellipsis
                         )
                         if (isEditMode) {
-                            Text(text = "編集", color = Color(0xFFFF9800), fontSize = 10.sp)
+                            Text(
+                                text = "編集",
+                                color = Color(0xFFFF9800),
+                                fontSize = (buttonHeight.value * 0.10f).sp
+                            )
                         }
                     }
                 }
                 else -> {
-                    // アイコンのみ
+                    // アイコンのみ（3列以上）
+                    val iconSize = minOf(buttonHeight * 0.6f, buttonWidth * 0.7f)
+
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         ShortcutIcon(item = item, appIcon = appIcon, size = iconSize)
                         if (isEditMode) {
-                            Text(text = "編集", color = Color(0xFFFF9800), fontSize = 10.sp)
+                            Text(
+                                text = "編集",
+                                color = Color(0xFFFF9800),
+                                fontSize = (buttonHeight.value * 0.10f).sp
+                            )
                         }
                     }
                 }
@@ -450,20 +449,15 @@ private fun ShortcutIcon(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun EmptySlotButton(
     isEditMode: Boolean,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit
+    onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxSize()
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
-            )
+            .clickable(onClick = onClick)
             .then(
                 if (isEditMode) Modifier.border(
                     width = 2.dp,

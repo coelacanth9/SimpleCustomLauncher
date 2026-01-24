@@ -54,9 +54,9 @@ data class InternalFeature(
 )
 
 val internalFeatures = listOf(
-    InternalFeature(ShortcutType.CALENDAR, "シンプルカレンダー", "📅"),
+    InternalFeature(ShortcutType.CALENDAR, "カレンダー", "📅"),
     InternalFeature(ShortcutType.MEMO, "メモ帳", "📝"),
-    InternalFeature(ShortcutType.DIALER, "電話（キーパッド）", "📞")
+    InternalFeature(ShortcutType.DIALER, "電話", "📞")
 )
 
 /**
@@ -215,6 +215,7 @@ fun ShortcutAddScreen(
 @Composable
 fun SlotEditScreen(
     currentShortcut: ShortcutItem?,
+    currentColumns: Int,
     unplacedShortcuts: List<ShortcutItem>,
     placedShortcuts: List<ShortcutItem>,
     onSelectUnplaced: (ShortcutItem) -> Unit,
@@ -224,6 +225,7 @@ fun SlotEditScreen(
     onSelectInternal: (InternalFeature) -> Unit,
     onSelectContact: (name: String, phoneNumber: String, type: ShortcutType) -> Unit = { _, _, _ -> },
     onClear: () -> Unit,
+    onChangeColumns: (Int) -> Unit,
     onDeleteRow: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -233,6 +235,7 @@ fun SlotEditScreen(
     // 連絡先選択の状態
     var selectedContact by remember { mutableStateOf<ContactInfo?>(null) }
     var showContactTypeDialog by remember { mutableStateOf(false) }
+    var showColumnsDialog by remember { mutableStateOf(false) }
 
     // 連絡先ピッカー
     val contactPickerLauncher = rememberLauncherForActivityResult(
@@ -301,6 +304,7 @@ fun SlotEditScreen(
             is SelectScreenState.Main -> {
                 SlotEditMainContent(
                     currentShortcut = currentShortcut,
+                    currentColumns = currentColumns,
                     unplacedShortcuts = unplacedShortcuts,
                     placedShortcuts = placedShortcuts,
                     onSelectUnplaced = onSelectUnplaced,
@@ -309,6 +313,7 @@ fun SlotEditScreen(
                     onGoToAppList = { screenState = SelectScreenState.AppList },
                     onContactPicker = startContactPicker,
                     onClear = onClear,
+                    onShowColumnsDialog = { showColumnsDialog = true },
                     onDeleteRow = onDeleteRow,
                     modifier = Modifier.padding(paddingValues)
                 )
@@ -353,6 +358,52 @@ fun SlotEditScreen(
             onDismiss = {
                 showContactTypeDialog = false
                 selectedContact = null
+            }
+        )
+    }
+
+    // 分割数変更ダイアログ
+    if (showColumnsDialog) {
+        AlertDialog(
+            onDismissRequest = { showColumnsDialog = false },
+            title = { Text("分割数を変更") },
+            text = {
+                Column {
+                    Text("この行の分割数を選んでください", modifier = Modifier.padding(bottom = 16.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        listOf(1, 2, 3).forEach { columns ->
+                            Button(
+                                onClick = {
+                                    onChangeColumns(columns)
+                                    showColumnsDialog = false
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = if (columns == currentColumns) {
+                                    ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
+                                } else {
+                                    ButtonDefaults.buttonColors(containerColor = Color(0xFFBDBDBD))
+                                }
+                            ) {
+                                Text("${columns}分割")
+                            }
+                        }
+                    }
+                    Text(
+                        text = "※分割数を減らすと、はみ出たショートカットは未配置になります",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(top = 12.dp)
+                    )
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showColumnsDialog = false }) {
+                    Text("キャンセル")
+                }
             }
         )
     }
@@ -423,6 +474,7 @@ private fun MainSelectContent(
 @Composable
 private fun SlotEditMainContent(
     currentShortcut: ShortcutItem?,
+    currentColumns: Int,
     unplacedShortcuts: List<ShortcutItem>,
     placedShortcuts: List<ShortcutItem>,
     onSelectUnplaced: (ShortcutItem) -> Unit,
@@ -431,6 +483,7 @@ private fun SlotEditMainContent(
     onGoToAppList: () -> Unit,
     onContactPicker: () -> Unit,
     onClear: () -> Unit,
+    onShowColumnsDialog: () -> Unit,
     onDeleteRow: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -498,13 +551,15 @@ private fun SlotEditMainContent(
             }
         }
 
+        // --- 行操作セクション ---
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
         // スロットを空にする
         if (currentShortcut != null && currentShortcut.type != ShortcutType.EMPTY) {
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(16.dp))
-            }
             item {
                 ActionCard(
                     text = "このスロットを空にする",
@@ -512,6 +567,18 @@ private fun SlotEditMainContent(
                     onClick = onClear
                 )
             }
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+
+        // この行の分割数を変更
+        item {
+            ActionCard(
+                text = "この行の分割数を変更（現在: ${currentColumns}分割）",
+                color = Color(0xFF1976D2),
+                onClick = onShowColumnsDialog
+            )
         }
 
         // この行を削除

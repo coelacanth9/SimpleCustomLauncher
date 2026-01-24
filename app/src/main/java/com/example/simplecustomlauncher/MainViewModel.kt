@@ -156,10 +156,21 @@ class MainViewModel(
     fun enterEditMode() {
         isEditMode = true
         showEditModeDialog = false
+        screenState = MainScreenState.Home
     }
 
     fun exitEditMode() {
         isEditMode = false
+        refresh()
+    }
+
+    fun resetToDefault() {
+        shortcutRepository.resetToDefault()
+        refresh()
+    }
+
+    fun clearLayout() {
+        shortcutRepository.clearAllLayout()
         refresh()
     }
 
@@ -175,11 +186,23 @@ class MainViewModel(
 
     fun addRow(columns: Int) {
         val currentConfig = shortcutRepository.getLayoutConfig()
+
+        // 行数上限チェック（1ページあたり最大5行）
+        if (currentConfig.rows.size >= MAX_ROWS_PER_PAGE) {
+            showError("1ページに追加できる行は${MAX_ROWS_PER_PAGE}行までです")
+            showAddRowDialog = false
+            return
+        }
+
         val newRowIndex = currentConfig.rows.maxOfOrNull { it.rowIndex }?.plus(1) ?: 0
         val newRows = currentConfig.rows + RowConfig(rowIndex = newRowIndex, columns = columns)
         shortcutRepository.saveLayoutConfig(HomeLayoutConfig(rows = newRows))
         refresh()
         showAddRowDialog = false
+    }
+
+    companion object {
+        const val MAX_ROWS_PER_PAGE = 5
     }
 
     // === ショートカット確認ダイアログ ===
@@ -276,6 +299,27 @@ class MainViewModel(
         // レイアウトから行を削除
         val currentConfig = shortcutRepository.getLayoutConfig()
         val newRows = currentConfig.rows.filter { it.rowIndex != rowIndex }
+        shortcutRepository.saveLayoutConfig(HomeLayoutConfig(rows = newRows))
+        refresh()
+    }
+
+    fun changeRowColumns(rowIndex: Int, newColumns: Int) {
+        val currentConfig = shortcutRepository.getLayoutConfig()
+        val currentPlacements = shortcutRepository.getAllPlacements()
+
+        // 分割数を減らす場合、はみ出た配置を削除
+        currentPlacements
+            .filter { it.row == rowIndex && it.column >= newColumns }
+            .forEach { shortcutRepository.removePlacement(it.shortcutId) }
+
+        // レイアウト更新
+        val newRows = currentConfig.rows.map { row ->
+            if (row.rowIndex == rowIndex) {
+                row.copy(columns = newColumns)
+            } else {
+                row
+            }
+        }
         shortcutRepository.saveLayoutConfig(HomeLayoutConfig(rows = newRows))
         refresh()
     }

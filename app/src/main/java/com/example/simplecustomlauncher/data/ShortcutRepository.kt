@@ -2,17 +2,20 @@ package com.example.simplecustomlauncher.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.UUID
 
 /**
  * ショートカットとレイアウトの永続化を担当
  */
-class ShortcutRepository(context: Context) {
+class ShortcutRepository(private val context: Context) {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(
         PREFS_NAME, Context.MODE_PRIVATE
     )
+    private val packageManager: PackageManager = context.packageManager
 
     // ===== ショートカット =====
 
@@ -161,6 +164,125 @@ class ShortcutRepository(context: Context) {
             }
     }
 
+    // ===== デフォルトレイアウト =====
+
+    /**
+     * 初回起動かどうか
+     */
+    fun isFirstLaunch(): Boolean {
+        return !prefs.getBoolean(KEY_INITIALIZED, false)
+    }
+
+    /**
+     * 初期化済みとしてマーク
+     */
+    fun markAsInitialized() {
+        prefs.edit().putBoolean(KEY_INITIALIZED, true).apply()
+    }
+
+    /**
+     * デフォルトレイアウトを適用
+     */
+    fun applyDefaultLayout() {
+        // 既存データをクリア
+        prefs.edit()
+            .remove(KEY_SHORTCUTS)
+            .remove(KEY_PLACEMENTS)
+            .remove(KEY_LAYOUT)
+            .apply()
+
+        // レイアウト設定を生成
+        val rows = defaultLayout.mapIndexed { index, row ->
+            RowConfig(rowIndex = index, columns = row.size)
+        }
+        saveLayoutConfig(HomeLayoutConfig(rows))
+
+        // 各アイテムを配置
+        defaultLayout.forEachIndexed { rowIndex, row ->
+            row.forEachIndexed { colIndex, itemName ->
+                val itemDef = itemMapping[itemName]
+                if (itemDef != null) {
+                    val shortcutItem = createShortcutFromDef(itemDef)
+                    if (shortcutItem != null) {
+                        saveShortcut(shortcutItem)
+                        savePlacement(ShortcutPlacement(
+                            shortcutId = shortcutItem.id,
+                            row = rowIndex,
+                            column = colIndex
+                        ))
+                    }
+                }
+            }
+        }
+
+        markAsInitialized()
+    }
+
+    /**
+     * 初期状態に戻す
+     */
+    fun resetToDefault() {
+        applyDefaultLayout()
+    }
+
+    /**
+     * レイアウトを全削除（行も配置もすべて削除）
+     */
+    fun clearAllLayout() {
+        prefs.edit()
+            .remove(KEY_SHORTCUTS)
+            .remove(KEY_PLACEMENTS)
+            .remove(KEY_LAYOUT)
+            .apply()
+        // 空のレイアウトを保存
+        saveLayoutConfig(HomeLayoutConfig(rows = emptyList()))
+    }
+
+    /**
+     * ItemDefからShortcutItemを生成
+     * APPタイプの場合、インストールされているパッケージを探す
+     */
+    private fun createShortcutFromDef(def: ItemDef): ShortcutItem? {
+        return when (def.type) {
+            ShortcutType.APP -> {
+                // インストールされているパッケージを探す
+                val installedPackage = def.packageNames.firstOrNull { pkg ->
+                    isAppInstalled(pkg)
+                }
+                if (installedPackage != null) {
+                    ShortcutItem(
+                        id = UUID.randomUUID().toString(),
+                        type = ShortcutType.APP,
+                        label = def.label,
+                        packageName = installedPackage
+                    )
+                } else {
+                    null  // インストールされていない場合はスキップ
+                }
+            }
+            else -> {
+                // 内部機能の場合
+                ShortcutItem(
+                    id = UUID.randomUUID().toString(),
+                    type = def.type,
+                    label = def.label
+                )
+            }
+        }
+    }
+
+    /**
+     * アプリがインストールされているか確認
+     */
+    private fun isAppInstalled(packageName: String): Boolean {
+        return try {
+            packageManager.getPackageInfo(packageName, 0)
+            true
+        } catch (e: PackageManager.NameNotFoundException) {
+            false
+        }
+    }
+
     // ===== JSON変換 =====
 
     private fun shortcutItemToJson(item: ShortcutItem): JSONObject {
@@ -212,5 +334,6 @@ class ShortcutRepository(context: Context) {
         private const val KEY_SHORTCUTS = "shortcuts"
         private const val KEY_PLACEMENTS = "placements"
         private const val KEY_LAYOUT = "layout"
+        private const val KEY_INITIALIZED = "initialized"
     }
 }

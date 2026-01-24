@@ -22,12 +22,17 @@ import com.example.simplecustomlauncher.data.SettingsRepository
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppSettingsScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onEnterEditMode: () -> Unit = {},
+    onResetToDefault: () -> Unit = {},
+    onClearLayout: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val settingsRepository = remember { SettingsRepository(context) }
 
     var showConfirmDialog by remember { mutableStateOf(settingsRepository.showConfirmDialog) }
+    var showResetDialog by remember { mutableStateOf(false) }
+    var showClearDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -59,7 +64,6 @@ fun AppSettingsScreen(
                 SettingsActionItem(
                     title = "ホームアプリの設定",
                     description = "このアプリを標準のホームに設定",
-                    buttonText = "設定を開く",
                     onClick = {
                         context.startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
                     }
@@ -87,25 +91,45 @@ fun AppSettingsScreen(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
 
-            // ページ設定（TODO）
+            // ページ設定（将来の課金機能）
             item {
-                SettingsNavigationItem(
+                SettingsDisabledItem(
                     title = "ホーム画面のページ数",
-                    description = "現在: 1ページ",
-                    onClick = {
-                        // TODO: ページ数設定
-                    }
+                    description = "準備中（今後のアップデートで追加予定）"
                 )
             }
 
-            // レイアウト設定（TODO）
+            // レイアウト編集
             item {
-                SettingsNavigationItem(
-                    title = "レイアウト設定",
-                    description = "行の追加・削除、分割数の変更",
-                    onClick = {
-                        // TODO: レイアウト設定画面
-                    }
+                SettingsActionItem(
+                    title = "レイアウト編集",
+                    description = "ショートカットの配置を変更します",
+                    onClick = onEnterEditMode
+                )
+            }
+
+            item {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            }
+
+            // 初期状態に戻す
+            item {
+                SettingsDangerItem(
+                    title = "初期状態にリセット",
+                    description = "配置をデフォルトに戻します",
+                    onClick = { showResetDialog = true }
+                )
+            }
+
+            // レイアウトをクリア
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            item {
+                SettingsDangerItem(
+                    title = "レイアウトをクリア",
+                    description = "すべての行と配置を削除します",
+                    onClick = { showClearDialog = true }
                 )
             }
 
@@ -121,6 +145,54 @@ fun AppSettingsScreen(
                 )
             }
         }
+    }
+
+    // リセット確認ダイアログ
+    if (showResetDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetDialog = false },
+            title = { Text("初期状態に戻す") },
+            text = { Text("現在の配置がすべて消去され、デフォルトの配置に戻ります。よろしいですか？") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onResetToDefault()
+                        showResetDialog = false
+                    }
+                ) {
+                    Text("リセット", color = Color(0xFFE53935))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetDialog = false }) {
+                    Text("キャンセル")
+                }
+            }
+        )
+    }
+
+    // レイアウト削除確認ダイアログ
+    if (showClearDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearDialog = false },
+            title = { Text("レイアウトを削除") },
+            text = { Text("すべての行とショートカット配置が削除されます。この操作は取り消せません。よろしいですか？") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onClearLayout()
+                        showClearDialog = false
+                    }
+                ) {
+                    Text("削除", color = Color(0xFFE53935))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearDialog = false }) {
+                    Text("キャンセル")
+                }
+            }
+        )
     }
 }
 
@@ -203,6 +275,39 @@ private fun SettingsNavigationItem(
 }
 
 @Composable
+private fun SettingsDisabledItem(
+    title: String,
+    description: String
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFEEEEEE)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Gray
+                )
+                Text(
+                    text = description,
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun SettingsInfoItem(
     title: String,
     value: String
@@ -237,11 +342,12 @@ private fun SettingsInfoItem(
 private fun SettingsActionItem(
     title: String,
     description: String,
-    buttonText: String,
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD)),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -255,7 +361,8 @@ private fun SettingsActionItem(
                 Text(
                     text = title,
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF1976D2)
                 )
                 Text(
                     text = description,
@@ -263,11 +370,41 @@ private fun SettingsActionItem(
                     color = Color.Gray
                 )
             }
-            Button(
-                onClick = onClick,
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(text = buttonText)
+        }
+    }
+}
+
+@Composable
+private fun SettingsDangerItem(
+    title: String,
+    description: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFFE53935)
+                )
+                Text(
+                    text = description,
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
             }
         }
     }
