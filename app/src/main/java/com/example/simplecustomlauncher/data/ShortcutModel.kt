@@ -65,19 +65,11 @@ data class ShortcutItem(
                     }
                 }
             }
-            ShortcutType.CALENDAR -> null  // アプリ内画面遷移なのでIntentは不要
-            ShortcutType.MEMO -> null      // アプリ内画面遷移なのでIntentは不要
-            ShortcutType.SETTINGS -> null  // アプリ内画面遷移なのでIntentは不要
+            ShortcutType.CALENDAR -> null
+            ShortcutType.MEMO -> null
+            ShortcutType.SETTINGS -> null
             ShortcutType.EMPTY -> null
         }
-    }
-
-    companion object {
-        fun empty() = ShortcutItem(
-            id = "empty_${System.currentTimeMillis()}",
-            type = ShortcutType.EMPTY,
-            label = ""
-        )
     }
 }
 
@@ -105,13 +97,7 @@ data class RowConfig(
  * ホーム画面全体のレイアウト設定
  */
 data class HomeLayoutConfig(
-    val rows: List<RowConfig> = listOf(
-        RowConfig(0, columns = 2),
-        RowConfig(1, columns = 2),
-        RowConfig(2, columns = 1),
-        RowConfig(3, columns = 1),
-        RowConfig(4, columns = 1),
-    )
+    val rows: List<RowConfig> = emptyList()
 ) {
     /**
      * 最初の空きスロットを探す

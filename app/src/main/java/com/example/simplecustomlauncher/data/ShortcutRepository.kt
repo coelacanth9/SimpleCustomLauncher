@@ -329,8 +329,28 @@ class ShortcutRepository(private val context: Context) {
         )
     }
 
+    // ===== Pinショートカット情報 =====
+
+    private val pinPrefs: SharedPreferences = context.getSharedPreferences(
+        PIN_PREFS_NAME, Context.MODE_PRIVATE
+    )
+
+    fun savePinShortcutInfo(itemId: String, shortcutId: String, packageName: String) {
+        pinPrefs.edit()
+            .putString("${itemId}_shortcut_id", shortcutId)
+            .putString("${itemId}_package", packageName)
+            .apply()
+    }
+
+    fun getPinShortcutInfo(itemId: String): Pair<String?, String?> {
+        val shortcutId = pinPrefs.getString("${itemId}_shortcut_id", null)
+        val packageName = pinPrefs.getString("${itemId}_package", null)
+        return shortcutId to packageName
+    }
+
     companion object {
         private const val PREFS_NAME = "launcher_shortcuts"
+        private const val PIN_PREFS_NAME = "pin_shortcuts"
         private const val KEY_SHORTCUTS = "shortcuts"
         private const val KEY_PLACEMENTS = "placements"
         private const val KEY_LAYOUT = "layout"

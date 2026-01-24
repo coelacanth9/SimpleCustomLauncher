@@ -79,10 +79,6 @@ class MainViewModel(
     var refreshKey by mutableStateOf(0)
         private set
 
-    // 設定
-    val showConfirmDialog: Boolean
-        get() = settingsRepository.showConfirmDialog
-
     // ショートカットデータ（refreshKey で再計算）
     fun getAllShortcuts(): List<ShortcutItem> {
         return shortcutRepository.getAllShortcuts().values.toList()
@@ -236,7 +232,7 @@ class MainViewModel(
         placeShortcut(item, row, column)
     }
 
-    fun placeIntent(shortLabel: String, packageName: String, shortcutId: String, context: Context, row: Int, column: Int) {
+    fun placeIntent(shortLabel: String, packageName: String, shortcutId: String, row: Int, column: Int) {
         val item = ShortcutItem(
             id = UUID.randomUUID().toString(),
             type = ShortcutType.INTENT,
@@ -244,7 +240,7 @@ class MainViewModel(
             packageName = packageName
         )
         shortcutRepository.saveShortcut(item)
-        saveShortcutInfo(context, item.id, shortcutId, packageName)
+        shortcutRepository.savePinShortcutInfo(item.id, shortcutId, packageName)
         placeShortcut(item, row, column)
     }
 
@@ -381,9 +377,7 @@ class MainViewModel(
     }
 
     private fun launchPinShortcut(context: Context, item: ShortcutItem) {
-        val prefs = context.getSharedPreferences("pin_shortcuts", Context.MODE_PRIVATE)
-        val shortcutId = prefs.getString("${item.id}_shortcut_id", null)
-        val packageName = prefs.getString("${item.id}_package", null)
+        val (shortcutId, packageName) = shortcutRepository.getPinShortcutInfo(item.id)
 
         Log.d("MainViewModel", "launchPinShortcut: itemId=${item.id}, shortcutId=$shortcutId, package=$packageName")
 
@@ -453,13 +447,5 @@ class MainViewModel(
         )
         shortcutRepository.saveShortcut(item)
         return item
-    }
-
-    private fun saveShortcutInfo(context: Context, itemId: String, shortcutId: String, packageName: String) {
-        val prefs = context.getSharedPreferences("pin_shortcuts", Context.MODE_PRIVATE)
-        prefs.edit()
-            .putString("${itemId}_shortcut_id", shortcutId)
-            .putString("${itemId}_package", packageName)
-            .apply()
     }
 }

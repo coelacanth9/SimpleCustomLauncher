@@ -100,20 +100,12 @@ class MainActivity : ComponentActivity() {
                     packageName = shortcutInfo.`package`
                 )
 
-                savePinShortcutInfo(item.id, shortcutInfo.id, shortcutInfo.`package`)
+                shortcutRepository.savePinShortcutInfo(item.id, shortcutInfo.id, shortcutInfo.`package`)
                 shortcutRepository.saveShortcut(item)
                 request.accept()
                 Toast.makeText(this, "「${item.label}」を一時保管に追加しました", Toast.LENGTH_SHORT).show()
             }
         }
-    }
-
-    private fun savePinShortcutInfo(itemId: String, shortcutId: String, packageName: String) {
-        val prefs = getSharedPreferences("pin_shortcuts", MODE_PRIVATE)
-        prefs.edit()
-            .putString("${itemId}_shortcut_id", shortcutId)
-            .putString("${itemId}_package", packageName)
-            .apply()
     }
 }
 
@@ -186,7 +178,7 @@ fun MainLauncherScreen() {
                 },
                 onSelectShortcut = { shortcut ->
                     viewModel.targetSlot?.let { (row, col) ->
-                        viewModel.placeIntent(shortcut.shortLabel, shortcut.packageName, shortcut.id, context, row, col)
+                        viewModel.placeIntent(shortcut.shortLabel, shortcut.packageName, shortcut.id, row, col)
                     }
                     viewModel.navigateToHome()
                 },
@@ -222,7 +214,7 @@ fun MainLauncherScreen() {
                     viewModel.navigateToHome()
                 },
                 onSelectShortcut = { shortcut ->
-                    viewModel.placeIntent(shortcut.shortLabel, shortcut.packageName, shortcut.id, context, state.row, state.column)
+                    viewModel.placeIntent(shortcut.shortLabel, shortcut.packageName, shortcut.id, state.row, state.column)
                     viewModel.navigateToHome()
                 },
                 onSelectInternal = { feature ->

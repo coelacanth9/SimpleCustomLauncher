@@ -538,31 +538,3 @@ private fun EmptySlotButton(
         }
     }
 }
-
-/**
- * ページインジケーター
- */
-@Composable
-fun PageIndicator(
-    pageCount: Int,
-    currentPage: Int,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        repeat(pageCount) { index ->
-            Box(
-                modifier = Modifier
-                    .padding(horizontal = 4.dp)
-                    .size(if (index == currentPage) 12.dp else 8.dp)
-                    .background(
-                        color = if (index == currentPage) Color(0xFF1976D2) else Color.LightGray,
-                        shape = CircleShape
-                    )
-            )
-        }
-    }
-}
