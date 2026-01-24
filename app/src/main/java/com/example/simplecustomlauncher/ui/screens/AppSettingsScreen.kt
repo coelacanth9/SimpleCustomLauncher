@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.simplecustomlauncher.data.SettingsRepository
 import com.example.simplecustomlauncher.data.TapMode
+import com.example.simplecustomlauncher.data.ThemeMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,7 +27,8 @@ fun AppSettingsScreen(
     onBack: () -> Unit,
     onEnterEditMode: () -> Unit = {},
     onResetToDefault: () -> Unit = {},
-    onClearLayout: () -> Unit = {}
+    onClearLayout: () -> Unit = {},
+    onThemeChanged: (ThemeMode) -> Unit = {}
 ) {
     val context = LocalContext.current
     val settingsRepository = remember { SettingsRepository(context) }
@@ -34,7 +36,9 @@ fun AppSettingsScreen(
     var tapMode by remember { mutableStateOf(settingsRepository.tapMode) }
     var showConfirmDialog by remember { mutableStateOf(settingsRepository.showConfirmDialog) }
     var tapFeedback by remember { mutableStateOf(settingsRepository.tapFeedback) }
+    var themeMode by remember { mutableStateOf(settingsRepository.themeMode) }
     var showTapModeDialog by remember { mutableStateOf(false) }
+    var showThemeModeDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
     var showClearDialog by remember { mutableStateOf(false) }
 
@@ -114,6 +118,24 @@ fun AppSettingsScreen(
                         tapFeedback = it
                         settingsRepository.tapFeedback = it
                     }
+                )
+            }
+
+            item {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            }
+
+            // テーマ設定
+            item {
+                SettingsSelectItem(
+                    title = "テーマ",
+                    description = "画面の配色を変更",
+                    currentValue = when (themeMode) {
+                        ThemeMode.LIGHT -> "ライト"
+                        ThemeMode.DARK -> "ダーク"
+                        ThemeMode.SYSTEM -> "端末設定に合わせる"
+                    },
+                    onClick = { showThemeModeDialog = true }
                 )
             }
 
@@ -225,6 +247,57 @@ fun AppSettingsScreen(
         )
     }
 
+    // テーマ選択ダイアログ
+    if (showThemeModeDialog) {
+        AlertDialog(
+            onDismissRequest = { showThemeModeDialog = false },
+            title = { Text("テーマを選択") },
+            text = {
+                Column {
+                    listOf(
+                        ThemeMode.SYSTEM to "端末設定に合わせる",
+                        ThemeMode.LIGHT to "ライト",
+                        ThemeMode.DARK to "ダーク"
+                    ).forEach { (mode, label) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    themeMode = mode
+                                    settingsRepository.themeMode = mode
+                                    onThemeChanged(mode)
+                                    showThemeModeDialog = false
+                                }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = themeMode == mode,
+                                onClick = {
+                                    themeMode = mode
+                                    settingsRepository.themeMode = mode
+                                    onThemeChanged(mode)
+                                    showThemeModeDialog = false
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = label,
+                                fontSize = 18.sp
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showThemeModeDialog = false }) {
+                    Text("キャンセル")
+                }
+            }
+        )
+    }
+
     // リセット確認ダイアログ
     if (showResetDialog) {
         AlertDialog(
@@ -238,7 +311,7 @@ fun AppSettingsScreen(
                         showResetDialog = false
                     }
                 ) {
-                    Text("リセット", color = Color(0xFFE53935))
+                    Text("リセット", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -262,7 +335,7 @@ fun AppSettingsScreen(
                         showClearDialog = false
                     }
                 ) {
-                    Text("削除", color = Color(0xFFE53935))
+                    Text("削除", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -285,7 +358,7 @@ private fun SettingsSelectItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -303,13 +376,13 @@ private fun SettingsSelectItem(
                 Text(
                     text = description,
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Text(
                 text = currentValue,
                 fontSize = 16.sp,
-                color = Color(0xFF1976D2),
+                color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Medium
             )
         }
@@ -325,7 +398,7 @@ private fun SettingsSwitchItem(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -343,7 +416,7 @@ private fun SettingsSwitchItem(
                 Text(
                     text = description,
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Switch(
@@ -361,7 +434,7 @@ private fun SettingsDisabledItem(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFEEEEEE)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -375,12 +448,12 @@ private fun SettingsDisabledItem(
                     text = title,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.outline
                 )
                 Text(
                     text = description,
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.outline
                 )
             }
         }
@@ -394,7 +467,7 @@ private fun SettingsInfoItem(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -412,7 +485,7 @@ private fun SettingsInfoItem(
             Text(
                 text = value,
                 fontSize = 16.sp,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -428,7 +501,7 @@ private fun SettingsActionItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -442,12 +515,12 @@ private fun SettingsActionItem(
                     text = title,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color(0xFF1976D2)
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Text(
                     text = description,
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                 )
             }
         }
@@ -464,7 +537,7 @@ private fun SettingsDangerItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -478,12 +551,12 @@ private fun SettingsDangerItem(
                     text = title,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color(0xFFE53935)
+                    color = MaterialTheme.colorScheme.onErrorContainer
                 )
                 Text(
                     text = description,
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
                 )
             }
         }

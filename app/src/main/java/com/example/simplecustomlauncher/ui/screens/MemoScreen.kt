@@ -124,7 +124,7 @@ fun MemoScreen(
                     Text(
                         text = "メモがありません\n上の入力欄から追加してください",
                         fontSize = fontSize.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = (fontSize * 1.5).sp
                     )
                 }
@@ -197,7 +197,7 @@ private fun MemoItemCard(
             .fillMaxWidth()
             .clickable { onToggleCheck() },
         colors = CardDefaults.cardColors(
-            containerColor = if (memo.isChecked) Color(0xFFE8F5E9) else Color(0xFFF5F5F5)
+            containerColor = if (memo.isChecked) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -218,14 +218,14 @@ private fun MemoItemCard(
                 fontSize = fontSize.sp,
                 modifier = Modifier.weight(1f),
                 textDecoration = if (memo.isChecked) TextDecoration.LineThrough else null,
-                color = if (memo.isChecked) Color.Gray else Color.Black
+                color = if (memo.isChecked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
             )
             Box {
                 IconButton(onClick = { showMenu = true }) {
                     Icon(
                         Icons.Default.MoreVert,
                         contentDescription = "メニュー",
-                        tint = Color.Gray
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 DropdownMenu(
@@ -241,13 +241,13 @@ private fun MemoItemCard(
                         leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                     )
                     DropdownMenuItem(
-                        text = { Text("削除", fontSize = 16.sp, color = Color.Red) },
+                        text = { Text("削除", fontSize = 16.sp, color = MaterialTheme.colorScheme.error) },
                         onClick = {
                             showMenu = false
                             onDelete()
                         },
                         leadingIcon = {
-                            Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red)
+                            Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                         }
                     )
                 }

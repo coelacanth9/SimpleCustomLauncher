@@ -81,7 +81,7 @@ fun SlotEditSheet(
                         ShortcutListItem(
                             shortcut = shortcut,
                             subtitle = "タップで配置",
-                            backgroundColor = Color(0xFFF5F5F5),
+                            backgroundColor = MaterialTheme.colorScheme.surface,
                             onClick = { onSelectShortcut(shortcut) }
                         )
                     }
@@ -96,7 +96,8 @@ fun SlotEditSheet(
                         ShortcutListItem(
                             shortcut = shortcut,
                             subtitle = "タップで入れ替え",
-                            backgroundColor = Color(0xFFFFF3E0),
+                            backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                             onClick = { onSelectShortcut(shortcut) }
                         )
                     }
@@ -111,7 +112,7 @@ fun SlotEditSheet(
                     item {
                         ActionButton(
                             text = "このスロットを空にする",
-                            color = Color(0xFFE53935),
+                            color = MaterialTheme.colorScheme.error,
                             onClick = onClear
                         )
                     }
@@ -129,7 +130,7 @@ private fun SectionHeader(text: String) {
         text = text,
         fontSize = 14.sp,
         fontWeight = FontWeight.Medium,
-        color = Color.Gray,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
     )
 }
@@ -144,7 +145,7 @@ private fun NavigationButton(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -164,7 +165,7 @@ private fun NavigationButton(
             Text(
                 text = "→",
                 fontSize = 20.sp,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -175,6 +176,7 @@ private fun ShortcutListItem(
     shortcut: ShortcutItem,
     subtitle: String,
     backgroundColor: Color,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
     onClick: () -> Unit
 ) {
     Card(
@@ -210,12 +212,13 @@ private fun ShortcutListItem(
                 Text(
                     text = shortcut.label,
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    color = contentColor
                 )
                 Text(
                     text = subtitle,
                     fontSize = 12.sp,
-                    color = Color(0xFFFF9800)
+                    color = contentColor.copy(alpha = 0.7f)
                 )
             }
         }

@@ -1,6 +1,5 @@
 package com.example.simplecustomlauncher.ui.theme
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -9,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import com.example.simplecustomlauncher.data.ThemeMode
 
 // ===== ライトモード ColorScheme =====
 private val LightColorScheme = lightColorScheme(
@@ -48,22 +48,22 @@ private val DarkColorScheme = darkColorScheme(
     primary = BluePrimaryLight,
     onPrimary = Color.Black,
     primaryContainer = BluePrimary,
-    onPrimaryContainer = BluePrimaryLight,
+    onPrimaryContainer = Color.White,
 
     secondary = OrangeSecondaryLight,
     onSecondary = Color.Black,
     secondaryContainer = OrangeSecondary,
-    onSecondaryContainer = OrangeSecondaryLight,
+    onSecondaryContainer = Color.White,  // 統一して白文字
 
     tertiary = GreenTertiaryLight,
     onTertiary = Color.Black,
     tertiaryContainer = GreenTertiary,
-    onTertiaryContainer = GreenTertiaryLight,
+    onTertiaryContainer = Color.White,  // 統一して白文字
 
     error = RedErrorLight,
     onError = Color.Black,
     errorContainer = RedError,
-    onErrorContainer = RedErrorLight,
+    onErrorContainer = Color.White,
 
     background = DarkBackground,
     onBackground = DarkOnBackground,
@@ -106,9 +106,15 @@ private val DarkExtendedColors = ExtendedColors(
 // ===== テーマ適用 =====
 @Composable
 fun SimpleCustomLauncherTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
     content: @Composable () -> Unit
 ) {
+    val darkTheme = when (themeMode) {
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    }
+
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     val extendedColors = if (darkTheme) DarkExtendedColors else LightExtendedColors
 

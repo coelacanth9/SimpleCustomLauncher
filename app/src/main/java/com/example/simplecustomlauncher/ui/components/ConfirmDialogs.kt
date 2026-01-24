@@ -35,7 +35,7 @@ fun ShortcutConfirmDialog(
                 .fillMaxWidth()
                 .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -53,7 +53,7 @@ fun ShortcutConfirmDialog(
                 Text(
                     text = "を開きますか？",
                     fontSize = 20.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -69,7 +69,7 @@ fun ShortcutConfirmDialog(
                             .weight(1f)
                             .height(56.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFE0E0E0)
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -77,7 +77,7 @@ fun ShortcutConfirmDialog(
                             text = "いいえ",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.DarkGray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
@@ -88,7 +88,7 @@ fun ShortcutConfirmDialog(
                             .weight(1f)
                             .height(56.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF1976D2)
+                            containerColor = MaterialTheme.colorScheme.primary
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -96,7 +96,7 @@ fun ShortcutConfirmDialog(
                             text = "はい",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 }
@@ -125,7 +125,7 @@ fun EditModeConfirmDialog(
                 .fillMaxWidth()
                 .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -142,7 +142,7 @@ fun EditModeConfirmDialog(
                 Text(
                     text = "ショートカットの配置を\n変更しますか？",
                     fontSize = 18.sp,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
 
@@ -158,7 +158,7 @@ fun EditModeConfirmDialog(
                             .weight(1f)
                             .height(56.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFE0E0E0)
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -166,7 +166,7 @@ fun EditModeConfirmDialog(
                             text = "いいえ",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.DarkGray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
@@ -176,7 +176,7 @@ fun EditModeConfirmDialog(
                             .weight(1f)
                             .height(56.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFFF9800)  // オレンジ
+                            containerColor = MaterialTheme.colorScheme.secondary
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -184,7 +184,7 @@ fun EditModeConfirmDialog(
                             text = "はい",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSecondary
                         )
                     }
                 }

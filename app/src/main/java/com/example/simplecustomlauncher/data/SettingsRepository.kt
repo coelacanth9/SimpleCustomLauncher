@@ -12,6 +12,15 @@ enum class TapMode {
 }
 
 /**
+ * テーマモード
+ */
+enum class ThemeMode {
+    LIGHT,   // ライトモード
+    DARK,    // ダークモード
+    SYSTEM   // 端末設定に合わせる
+}
+
+/**
  * アプリ設定の永続化
  */
 class SettingsRepository(context: Context) {
@@ -48,10 +57,25 @@ class SettingsRepository(context: Context) {
         get() = prefs.getBoolean(KEY_TAP_FEEDBACK, true)
         set(value) = prefs.edit().putBoolean(KEY_TAP_FEEDBACK, value).apply()
 
+    /**
+     * テーマモード
+     */
+    var themeMode: ThemeMode
+        get() {
+            val value = prefs.getString(KEY_THEME_MODE, ThemeMode.SYSTEM.name)
+            return try {
+                ThemeMode.valueOf(value ?: ThemeMode.SYSTEM.name)
+            } catch (e: Exception) {
+                ThemeMode.SYSTEM
+            }
+        }
+        set(value) = prefs.edit().putString(KEY_THEME_MODE, value.name).apply()
+
     companion object {
         private const val PREFS_NAME = "launcher_settings"
         private const val KEY_TAP_MODE = "tap_mode"
         private const val KEY_CONFIRM_DIALOG = "show_confirm_dialog"
         private const val KEY_TAP_FEEDBACK = "tap_feedback"
+        private const val KEY_THEME_MODE = "theme_mode"
     }
 }

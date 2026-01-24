@@ -38,7 +38,7 @@ fun AddRowDialog(
                 Text(
                     text = "分割数を選んでください",
                     fontSize = 16.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 // 1分割
@@ -83,7 +83,7 @@ private fun ColumnOptionCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF5F5F5)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -104,7 +104,7 @@ private fun ColumnOptionCard(
                             .weight(1f)
                             .height(32.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFF1976D2)
+                            containerColor = MaterialTheme.colorScheme.primary
                         ),
                         shape = RoundedCornerShape(4.dp)
                     ) {}
@@ -122,7 +122,7 @@ private fun ColumnOptionCard(
                 Text(
                     text = description,
                     fontSize = 12.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

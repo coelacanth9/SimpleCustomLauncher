@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -75,7 +76,7 @@ fun HomeHeader(
             Text(
                 text = "アプリ設定",
                 fontSize = 14.sp,
-                color = if (isEditMode) Color.LightGray else Color.Gray,
+                color = if (isEditMode) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .then(
                         if (!isEditMode) Modifier.clickable { onAppSettings() } else Modifier
@@ -85,7 +86,7 @@ fun HomeHeader(
             Text(
                 text = "スマホ設定",
                 fontSize = 14.sp,
-                color = if (isEditMode) Color.LightGray else Color.Gray,
+                color = if (isEditMode) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .then(
                         if (!isEditMode) Modifier.clickable {
@@ -103,7 +104,7 @@ fun HomeHeader(
         Text(
             text = currentDateTime.format(dateFormatter),
             fontSize = 28.sp,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
 
@@ -112,13 +113,13 @@ fun HomeHeader(
 
         if (holidayName != null) {
             Surface(
-                color = Color(0xFFFFEBEE),
+                color = MaterialTheme.colorScheme.errorContainer,
                 shape = RoundedCornerShape(4.dp),
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 Text(
                     text = holidayName,
-                    color = Color.Red,
+                    color = MaterialTheme.colorScheme.error,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
@@ -139,14 +140,14 @@ fun HomeHeader(
                 // 編集完了ボタン
                 Surface(
                     modifier = Modifier.clickable { onEditDone() },
-                    color = Color(0xFFFF9800),
+                    color = MaterialTheme.colorScheme.secondary,
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
                         text = "編集完了",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSecondary,
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
                     )
                 }
@@ -154,14 +155,14 @@ fun HomeHeader(
                 // 行追加ボタン
                 Surface(
                     modifier = Modifier.clickable { onAddRow() },
-                    color = Color(0xFF4CAF50),
+                    color = MaterialTheme.colorScheme.tertiary,
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
                         text = "＋行追加",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onTertiary,
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
                     )
                 }
@@ -172,6 +173,7 @@ fun HomeHeader(
                 text = currentDateTime.format(timeFormatter),
                 fontSize = 72.sp,
                 fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
         }

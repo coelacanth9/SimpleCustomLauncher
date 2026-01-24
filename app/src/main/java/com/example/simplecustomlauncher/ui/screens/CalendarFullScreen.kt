@@ -106,9 +106,9 @@ fun CalendarFullScreen(
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = when (index) {
-                            0 -> Color.Red
-                            6 -> Color.Blue
-                            else -> Color.Black
+                            0 -> MaterialTheme.colorScheme.error
+                            6 -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.onBackground
                         }
                     )
                 }
@@ -167,16 +167,16 @@ private fun CalendarGrid(
                             val isSaturday = col == 6
 
                             val textColor = when {
-                                isHoliday || isSunday -> Color.Red
-                                isSaturday -> Color.Blue
-                                else -> Color.Black
+                                isHoliday || isSunday -> MaterialTheme.colorScheme.error
+                                isSaturday -> MaterialTheme.colorScheme.primary
+                                else -> MaterialTheme.colorScheme.onBackground
                             }
 
                             // セルの背景色
                             val cellBackground = if (isToday) {
-                                Color(0xFFFF9800)  // 当日はオレンジ
+                                MaterialTheme.colorScheme.secondary  // 当日はオレンジ（secondary）
                             } else {
-                                Color(0xFFE8E8E8)  // 通常は薄いグレー（少し濃く）
+                                MaterialTheme.colorScheme.surfaceVariant  // 通常
                             }
 
                             // セル全体
@@ -192,7 +192,7 @@ private fun CalendarGrid(
                                     text = day.toString(),
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isToday) Color.White else textColor
+                                    color = if (isToday) MaterialTheme.colorScheme.onSecondary else textColor
                                 )
 
                                 // 祝日名（日付のすぐ下、スペースがあれば全部表示）
@@ -200,7 +200,7 @@ private fun CalendarGrid(
                                     Text(
                                         text = holidayName,
                                         fontSize = 8.sp,
-                                        color = if (isToday) Color.White else Color.Red,
+                                        color = if (isToday) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.error,
                                         maxLines = 4,
                                         overflow = TextOverflow.Ellipsis,
                                         textAlign = TextAlign.Center,

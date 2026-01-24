@@ -22,10 +22,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.simplecustomlauncher.PermissionManager.CALENDAR_PERMISSIONS
+import com.example.simplecustomlauncher.data.SettingsRepository
 import com.example.simplecustomlauncher.data.ShortcutItem
 import com.example.simplecustomlauncher.data.ShortcutPlacement
 import com.example.simplecustomlauncher.data.ShortcutRepository
 import com.example.simplecustomlauncher.data.ShortcutType
+import com.example.simplecustomlauncher.data.ThemeMode
 import com.example.simplecustomlauncher.ui.screens.AppSettingsScreen
 import com.example.simplecustomlauncher.ui.screens.CalendarFullScreen
 import com.example.simplecustomlauncher.ui.screens.HomeScreen
@@ -38,10 +40,12 @@ import java.util.UUID
 class MainActivity : ComponentActivity() {
 
     private lateinit var shortcutRepository: ShortcutRepository
+    private lateinit var settingsRepository: SettingsRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         shortcutRepository = ShortcutRepository(this)
+        settingsRepository = SettingsRepository(this)
 
         // 初回起動時にデフォルトレイアウトを適用
         if (shortcutRepository.isFirstLaunch()) {
@@ -52,14 +56,21 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
 
         setContent {
-            SimpleCustomLauncherTheme {
+            // テーマモードを監視
+            var themeMode by remember { mutableStateOf(settingsRepository.themeMode) }
+
+            SimpleCustomLauncherTheme(themeMode = themeMode) {
                 Surface(
                     modifier = Modifier
                         .fillMaxSize()
                         .statusBarsPadding(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainLauncherScreen()
+                    MainLauncherScreen(
+                        onThemeChanged = { newMode ->
+                            themeMode = newMode
+                        }
+                    )
                 }
             }
         }
@@ -111,7 +122,9 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainLauncherScreen() {
+fun MainLauncherScreen(
+    onThemeChanged: (ThemeMode) -> Unit = {}
+) {
     val context = LocalContext.current
 
     // ViewModel
@@ -261,7 +274,8 @@ fun MainLauncherScreen() {
                 onBack = { viewModel.navigateToHome() },
                 onEnterEditMode = { viewModel.enterEditMode() },
                 onResetToDefault = { viewModel.resetToDefault() },
-                onClearLayout = { viewModel.clearLayout() }
+                onClearLayout = { viewModel.clearLayout() },
+                onThemeChanged = onThemeChanged
             )
         }
     }

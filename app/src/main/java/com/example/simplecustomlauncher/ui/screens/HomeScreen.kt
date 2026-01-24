@@ -36,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -68,6 +69,7 @@ import com.example.simplecustomlauncher.data.TapMode
 import com.example.simplecustomlauncher.ui.components.AddRowDialog
 import com.example.simplecustomlauncher.ui.components.EditModeConfirmDialog
 import com.example.simplecustomlauncher.ui.components.ShortcutConfirmDialog
+import com.example.simplecustomlauncher.ui.theme.AppTheme
 
 /**
  * ホーム画面
@@ -299,11 +301,11 @@ private fun ShortcutButton(
             .then(
                 if (isEditMode) Modifier.border(
                     width = 3.dp,
-                    color = Color(0xFFFF9800),
+                    color = MaterialTheme.colorScheme.secondary,
                     shape = RoundedCornerShape(16.dp)
                 ) else Modifier
             ),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = AppTheme.extendedColors.cardBackground),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
@@ -319,7 +321,7 @@ private fun ShortcutButton(
 
             when (columns) {
                 1 -> {
-                    // 横並びレイアウト（1列）
+                    // 横並びレイアウト（1列）- アイコンと文字を中央にグループ化
                     val iconSize = buttonHeight * 0.55f
                     val labelSize = (buttonHeight.value * 0.22f).sp
 
@@ -328,32 +330,25 @@ private fun ShortcutButton(
                         horizontalArrangement = Arrangement.Center,
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        Box(
-                            modifier = Modifier.weight(0.3f),
-                            contentAlignment = Alignment.Center
+                        ShortcutIcon(item = item, appIcon = appIcon, size = iconSize)
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(
+                            horizontalAlignment = Alignment.Start
                         ) {
-                            ShortcutIcon(item = item, appIcon = appIcon, size = iconSize)
-                        }
-                        Box(
-                            modifier = Modifier.weight(0.7f),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            Column {
+                            Text(
+                                text = item.label,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = labelSize,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            if (isEditMode) {
                                 Text(
-                                    text = item.label,
-                                    color = Color(0xFF333333),
-                                    fontSize = labelSize,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    text = "タップで編集",
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    fontSize = (buttonHeight.value * 0.12f).sp
                                 )
-                                if (isEditMode) {
-                                    Text(
-                                        text = "タップで編集",
-                                        color = Color(0xFFFF9800),
-                                        fontSize = (buttonHeight.value * 0.12f).sp
-                                    )
-                                }
                             }
                         }
                     }
@@ -372,7 +367,7 @@ private fun ShortcutButton(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = item.label,
-                            color = Color(0xFF333333),
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = labelSize,
                             fontWeight = FontWeight.Medium,
                             textAlign = TextAlign.Center,
@@ -382,7 +377,7 @@ private fun ShortcutButton(
                         if (isEditMode) {
                             Text(
                                 text = "編集",
-                                color = Color(0xFFFF9800),
+                                color = MaterialTheme.colorScheme.secondary,
                                 fontSize = (buttonHeight.value * 0.10f).sp
                             )
                         }
@@ -401,7 +396,7 @@ private fun ShortcutButton(
                         if (isEditMode) {
                             Text(
                                 text = "編集",
-                                color = Color(0xFFFF9800),
+                                color = MaterialTheme.colorScheme.secondary,
                                 fontSize = (buttonHeight.value * 0.10f).sp
                             )
                         }
@@ -435,18 +430,18 @@ private fun ShortcutIcon(
                     imageVector = Icons.Default.Home,
                     contentDescription = item.label,
                     modifier = Modifier.size(size),
-                    tint = Color(0xFF1976D2)
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
         }
         ShortcutType.CALENDAR -> {
-            Icon(Icons.Default.DateRange, "カレンダー", Modifier.size(size), Color(0xFF4CAF50))
+            Icon(Icons.Default.DateRange, "カレンダー", Modifier.size(size), MaterialTheme.colorScheme.tertiary)
         }
         ShortcutType.MEMO -> {
-            Icon(Icons.Default.Edit, "メモ帳", Modifier.size(size), Color(0xFFFF9800))
+            Icon(Icons.Default.Edit, "メモ帳", Modifier.size(size), MaterialTheme.colorScheme.secondary)
         }
         ShortcutType.SETTINGS -> {
-            Icon(Icons.Default.Settings, "設定", Modifier.size(size), Color(0xFF757575))
+            Icon(Icons.Default.Settings, "設定", Modifier.size(size), MaterialTheme.colorScheme.onSurfaceVariant)
         }
         ShortcutType.PHONE -> {
             // 電話アプリのアイコンを取得
@@ -458,7 +453,7 @@ private fun ShortcutIcon(
                 val bitmap = remember(phoneIcon) { phoneIcon.toBitmap(128, 128) }
                 Image(bitmap = bitmap.asImageBitmap(), contentDescription = item.label, modifier = Modifier.size(size))
             } else {
-                Icon(Icons.Default.Phone, item.label, Modifier.size(size), Color(0xFF4CAF50))
+                Icon(Icons.Default.Phone, item.label, Modifier.size(size), MaterialTheme.colorScheme.tertiary)
             }
         }
         ShortcutType.SMS -> {
@@ -471,19 +466,30 @@ private fun ShortcutIcon(
                 val bitmap = remember(smsIcon) { smsIcon.toBitmap(128, 128) }
                 Image(bitmap = bitmap.asImageBitmap(), contentDescription = item.label, modifier = Modifier.size(size))
             } else {
-                Icon(Icons.Default.Email, item.label, Modifier.size(size), Color(0xFF2196F3))
+                Icon(Icons.Default.Email, item.label, Modifier.size(size), MaterialTheme.colorScheme.primary)
             }
         }
         ShortcutType.DIALER -> {
             // カスタムキーパッドアイコン
+            val tintColor = MaterialTheme.colorScheme.onSurface
             val dialerIcon = remember {
                 ContextCompat.getDrawable(context, R.drawable.ic_phone_keypad)
             }
             if (dialerIcon != null) {
-                val bitmap = remember(dialerIcon) { dialerIcon.toBitmap(128, 128) }
-                Image(bitmap = bitmap.asImageBitmap(), contentDescription = item.label, modifier = Modifier.size(size))
+                val tintedDrawable = remember(dialerIcon, tintColor) {
+                    dialerIcon.mutate().apply {
+                        setTint(tintColor.hashCode())
+                    }
+                }
+                val bitmap = remember(tintedDrawable, tintColor) { tintedDrawable.toBitmap(128, 128) }
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = item.label,
+                    modifier = Modifier.size(size),
+                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(tintColor)
+                )
             } else {
-                Icon(Icons.Default.Phone, item.label, Modifier.size(size), Color(0xFF4CAF50))
+                Icon(Icons.Default.Phone, item.label, Modifier.size(size), MaterialTheme.colorScheme.tertiary)
             }
         }
         ShortcutType.EMPTY -> { }
@@ -517,11 +523,11 @@ private fun EmptySlotButton(
             .then(
                 if (isEditMode) Modifier.border(
                     width = 2.dp,
-                    color = Color(0xFFFF9800),
+                    color = MaterialTheme.colorScheme.secondary,
                     shape = RoundedCornerShape(16.dp)
                 ) else Modifier
             ),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -533,7 +539,7 @@ private fun EmptySlotButton(
                 imageVector = Icons.Default.Add,
                 contentDescription = "追加",
                 modifier = Modifier.size(36.dp),
-                tint = Color(0xFFBDBDBD)
+                tint = MaterialTheme.colorScheme.outline
             )
         }
     }

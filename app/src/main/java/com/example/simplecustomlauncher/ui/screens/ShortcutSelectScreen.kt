@@ -382,9 +382,9 @@ fun SlotEditScreen(
                                 },
                                 modifier = Modifier.weight(1f),
                                 colors = if (columns == currentColumns) {
-                                    ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
+                                    ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                                 } else {
-                                    ButtonDefaults.buttonColors(containerColor = Color(0xFFBDBDBD))
+                                    ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.outline)
                                 }
                             ) {
                                 Text("${columns}分割")
@@ -394,7 +394,7 @@ fun SlotEditScreen(
                     Text(
                         text = "※分割数を減らすと、はみ出たショートカットは未配置になります",
                         fontSize = 12.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 12.dp)
                     )
                 }
@@ -463,7 +463,7 @@ private fun MainSelectContent(
                 ShortcutCard(
                     shortcut = shortcut,
                     subtitle = "タップで配置",
-                    backgroundColor = Color(0xFFF5F5F5),
+                    backgroundColor = MaterialTheme.colorScheme.surface,
                     onClick = { onSelectUnplaced(shortcut) }
                 )
             }
@@ -530,7 +530,7 @@ private fun SlotEditMainContent(
                 ShortcutCard(
                     shortcut = shortcut,
                     subtitle = "タップで配置",
-                    backgroundColor = Color(0xFFF5F5F5),
+                    backgroundColor = MaterialTheme.colorScheme.surface,
                     onClick = { onSelectUnplaced(shortcut) }
                 )
             }
@@ -545,7 +545,8 @@ private fun SlotEditMainContent(
                 ShortcutCard(
                     shortcut = shortcut,
                     subtitle = "タップで入れ替え",
-                    backgroundColor = Color(0xFFFFF3E0),
+                    backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                     onClick = { onSelectPlaced(shortcut) }
                 )
             }
@@ -563,7 +564,7 @@ private fun SlotEditMainContent(
             item {
                 ActionCard(
                     text = "このスロットを空にする",
-                    color = Color(0xFFE53935),
+                    color = MaterialTheme.colorScheme.error,
                     onClick = onClear
                 )
             }
@@ -576,7 +577,7 @@ private fun SlotEditMainContent(
         item {
             ActionCard(
                 text = "この行の分割数を変更（現在: ${currentColumns}分割）",
-                color = Color(0xFF1976D2),
+                color = MaterialTheme.colorScheme.primary,
                 onClick = onShowColumnsDialog
             )
         }
@@ -588,7 +589,7 @@ private fun SlotEditMainContent(
         item {
             ActionCard(
                 text = "この行全体を削除する",
-                color = Color(0xFF757575),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 onClick = onDeleteRow
             )
         }
@@ -715,7 +716,7 @@ private fun AppListContent(
         Text(
             text = "${filteredApps.size}件のアプリ",
             fontSize = 14.sp,
-            color = Color.Gray,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
         )
 
@@ -785,7 +786,7 @@ private fun AppShortcutsContent(
                 Text(
                     text = "このアプリにはショートカットがありません",
                     modifier = Modifier.padding(16.dp),
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         } else {
@@ -797,7 +798,7 @@ private fun AppShortcutsContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onSelectShortcut(shortcut) },
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(
@@ -816,7 +817,7 @@ private fun AppShortcutsContent(
                                 Text(
                                     text = it,
                                     fontSize = 12.sp,
-                                    color = Color.Gray
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -835,7 +836,7 @@ private fun SectionHeader(text: String) {
         text = text,
         fontSize = 14.sp,
         fontWeight = FontWeight.Medium,
-        color = Color.Gray,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
     )
 }
@@ -850,7 +851,7 @@ private fun NavigationCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -870,7 +871,7 @@ private fun NavigationCard(
             Text(
                 text = "→",
                 fontSize = 20.sp,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -881,6 +882,7 @@ private fun ShortcutCard(
     shortcut: ShortcutItem,
     subtitle: String,
     backgroundColor: Color,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
     onClick: () -> Unit
 ) {
     Card(
@@ -913,12 +915,13 @@ private fun ShortcutCard(
                 Text(
                     text = shortcut.label,
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    color = contentColor
                 )
                 Text(
                     text = subtitle,
                     fontSize = 12.sp,
-                    color = Color(0xFFFF9800)
+                    color = contentColor.copy(alpha = 0.7f)
                 )
             }
         }
@@ -931,12 +934,13 @@ private fun InternalFeatureCard(
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val contentColor = MaterialTheme.colorScheme.onTertiaryContainer
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -953,7 +957,8 @@ private fun InternalFeatureCard(
                     Image(
                         bitmap = bitmap.asImageBitmap(),
                         contentDescription = feature.label,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(24.dp),
+                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(contentColor)
                     )
                 }
             } else {
@@ -963,7 +968,8 @@ private fun InternalFeatureCard(
             Text(
                 text = feature.label,
                 fontSize = 18.sp,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                color = contentColor
             )
         }
     }
@@ -981,7 +987,7 @@ private fun AppCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -999,7 +1005,7 @@ private fun AppCard(
                     Text(
                         text = app.packageName,
                         fontSize = 10.sp,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

@@ -29,7 +29,7 @@ fun ContactTypeDialog(
                 .fillMaxWidth()
                 .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -46,7 +46,7 @@ fun ContactTypeDialog(
                 Text(
                     text = "どちらのショートカットを作成しますか？",
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -56,7 +56,7 @@ fun ContactTypeDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onSelectPhone() },
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(
@@ -76,7 +76,7 @@ fun ContactTypeDialog(
                             Text(
                                 text = "タップで直接発信",
                                 fontSize = 12.sp,
-                                color = Color.Gray
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -89,7 +89,7 @@ fun ContactTypeDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onSelectSms() },
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(
@@ -109,7 +109,7 @@ fun ContactTypeDialog(
                             Text(
                                 text = "タップでメッセージ作成",
                                 fontSize = 12.sp,
-                                color = Color.Gray
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -118,7 +118,7 @@ fun ContactTypeDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 TextButton(onClick = onDismiss) {
-                    Text("キャンセル", color = Color.Gray)
+                    Text("キャンセル", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
