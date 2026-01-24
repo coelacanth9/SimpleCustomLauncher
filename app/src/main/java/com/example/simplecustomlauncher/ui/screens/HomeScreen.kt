@@ -1,9 +1,12 @@
 package com.example.simplecustomlauncher.ui.screens
 
+import android.view.HapticFeedbackConstants
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -42,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -56,9 +60,11 @@ import com.example.simplecustomlauncher.MainScreenState
 import com.example.simplecustomlauncher.MainViewModel
 import com.example.simplecustomlauncher.ShortcutHelper
 import com.example.simplecustomlauncher.data.RowConfig
+import com.example.simplecustomlauncher.data.SettingsRepository
 import com.example.simplecustomlauncher.data.ShortcutItem
 import com.example.simplecustomlauncher.data.ShortcutPlacement
 import com.example.simplecustomlauncher.data.ShortcutType
+import com.example.simplecustomlauncher.data.TapMode
 import com.example.simplecustomlauncher.ui.components.AddRowDialog
 import com.example.simplecustomlauncher.ui.components.EditModeConfirmDialog
 import com.example.simplecustomlauncher.ui.components.ShortcutConfirmDialog
@@ -139,6 +145,11 @@ private fun HomeContent(
     shortcutHelper: ShortcutHelper
 ) {
     val context = LocalContext.current
+    val view = LocalView.current
+    val settingsRepository = remember { SettingsRepository(context) }
+    val tapMode = settingsRepository.tapMode
+    val showConfirmDialog = settingsRepository.showConfirmDialog
+    val tapFeedback = settingsRepository.tapFeedback
 
     // データを読み込み
     val layoutConfig = remember(viewModel.refreshKey) { viewModel.getLayoutConfig() }
@@ -160,13 +171,17 @@ private fun HomeContent(
                 placements = placementsByRow[rowConfig.rowIndex] ?: emptyList(),
                 shortcuts = shortcuts,
                 isEditMode = viewModel.isEditMode,
+                tapMode = tapMode,
                 onShortcutClick = { item ->
+                    if (tapFeedback) {
+                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    }
                     when (item.type) {
                         ShortcutType.CALENDAR -> viewModel.navigateTo(MainScreenState.Calendar)
                         ShortcutType.MEMO -> viewModel.navigateTo(MainScreenState.Memo)
                         ShortcutType.SETTINGS -> viewModel.navigateTo(MainScreenState.AppSettings)
                         else -> {
-                            if (viewModel.showConfirmDialog) {
+                            if (showConfirmDialog) {
                                 viewModel.showShortcutConfirmDialog(item)
                             } else {
                                 viewModel.launchShortcut(context, item, shortcutHelper)
@@ -175,9 +190,15 @@ private fun HomeContent(
                     }
                 },
                 onEmptyClick = { column ->
+                    if (tapFeedback) {
+                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    }
                     viewModel.navigateToShortcutAdd(rowConfig.rowIndex, column)
                 },
                 onSlotClickInEditMode = { row, column, currentShortcut ->
+                    if (tapFeedback) {
+                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    }
                     viewModel.navigateToSlotEdit(row, column, currentShortcut)
                 },
                 modifier = Modifier.weight(1f)
@@ -186,12 +207,14 @@ private fun HomeContent(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HomeRow(
     rowConfig: RowConfig,
     placements: List<ShortcutPlacement>,
     shortcuts: Map<String, ShortcutItem>,
     isEditMode: Boolean,
+    tapMode: TapMode,
     onShortcutClick: (ShortcutItem) -> Unit,
     onEmptyClick: (column: Int) -> Unit,
     onSlotClickInEditMode: (row: Int, column: Int, currentShortcut: ShortcutItem?) -> Unit,
@@ -211,6 +234,7 @@ private fun HomeRow(
                         item = shortcut,
                         columns = rowConfig.columns,
                         isEditMode = isEditMode,
+                        tapMode = tapMode,
                         onClick = {
                             if (isEditMode) {
                                 onSlotClickInEditMode(rowConfig.rowIndex, colIndex, shortcut)
@@ -222,6 +246,7 @@ private fun HomeRow(
                 } else {
                     EmptySlotButton(
                         isEditMode = isEditMode,
+                        tapMode = tapMode,
                         onClick = {
                             if (isEditMode) {
                                 onSlotClickInEditMode(rowConfig.rowIndex, colIndex, null)
@@ -236,11 +261,13 @@ private fun HomeRow(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ShortcutButton(
     item: ShortcutItem,
     columns: Int,
     isEditMode: Boolean,
+    tapMode: TapMode,
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -251,10 +278,24 @@ private fun ShortcutButton(
         item.packageName?.let { shortcutHelper.getAppIcon(it) }
     }
 
+    // タップモードに応じたModifier
+    val clickModifier = if (isEditMode) {
+        // 編集モード中は常にタップで反応
+        Modifier.clickable(onClick = onClick)
+    } else {
+        when (tapMode) {
+            TapMode.SINGLE_TAP -> Modifier.clickable(onClick = onClick)
+            TapMode.LONG_TAP -> Modifier.combinedClickable(
+                onClick = { /* タップでは何もしない */ },
+                onLongClick = onClick
+            )
+        }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxSize()
-            .clickable(onClick = onClick)
+            .then(clickModifier)
             .then(
                 if (isEditMode) Modifier.border(
                     width = 3.dp,
@@ -449,15 +490,30 @@ private fun ShortcutIcon(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun EmptySlotButton(
     isEditMode: Boolean,
+    tapMode: TapMode,
     onClick: () -> Unit
 ) {
+    // タップモードに応じたModifier
+    val clickModifier = if (isEditMode) {
+        Modifier.clickable(onClick = onClick)
+    } else {
+        when (tapMode) {
+            TapMode.SINGLE_TAP -> Modifier.clickable(onClick = onClick)
+            TapMode.LONG_TAP -> Modifier.combinedClickable(
+                onClick = { },
+                onLongClick = onClick
+            )
+        }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxSize()
-            .clickable(onClick = onClick)
+            .then(clickModifier)
             .then(
                 if (isEditMode) Modifier.border(
                     width = 2.dp,

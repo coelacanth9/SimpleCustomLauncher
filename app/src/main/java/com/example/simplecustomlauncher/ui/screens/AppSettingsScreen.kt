@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.simplecustomlauncher.data.SettingsRepository
+import com.example.simplecustomlauncher.data.TapMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,7 +31,10 @@ fun AppSettingsScreen(
     val context = LocalContext.current
     val settingsRepository = remember { SettingsRepository(context) }
 
+    var tapMode by remember { mutableStateOf(settingsRepository.tapMode) }
     var showConfirmDialog by remember { mutableStateOf(settingsRepository.showConfirmDialog) }
+    var tapFeedback by remember { mutableStateOf(settingsRepository.tapFeedback) }
+    var showTapModeDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
     var showClearDialog by remember { mutableStateOf(false) }
 
@@ -63,7 +67,7 @@ fun AppSettingsScreen(
             item {
                 SettingsActionItem(
                     title = "ホームアプリの設定",
-                    description = "このアプリを標準のホームに設定",
+                    description = "このアプリを標準のホームアプリに設定",
                     onClick = {
                         context.startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
                     }
@@ -74,15 +78,41 @@ fun AppSettingsScreen(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
 
+            // タップ操作設定
+            item {
+                SettingsSelectItem(
+                    title = "起動操作",
+                    description = "アプリを起動するときの操作",
+                    currentValue = when (tapMode) {
+                        TapMode.SINGLE_TAP -> "タップ"
+                        TapMode.LONG_TAP -> "長押し"
+                    },
+                    onClick = { showTapModeDialog = true }
+                )
+            }
+
             // 確認ダイアログ設定
             item {
                 SettingsSwitchItem(
-                    title = "タップ時に確認",
-                    description = "ショートカットタップ時に確認ダイアログを表示",
+                    title = "起動時に確認",
+                    description = "起動前に確認ダイアログを表示",
                     checked = showConfirmDialog,
                     onCheckedChange = {
                         showConfirmDialog = it
                         settingsRepository.showConfirmDialog = it
+                    }
+                )
+            }
+
+            // タップフィードバック設定
+            item {
+                SettingsSwitchItem(
+                    title = "タップ時の振動",
+                    description = "タップ時に振動でフィードバック",
+                    checked = tapFeedback,
+                    onCheckedChange = {
+                        tapFeedback = it
+                        settingsRepository.tapFeedback = it
                     }
                 )
             }
@@ -147,6 +177,54 @@ fun AppSettingsScreen(
         }
     }
 
+    // タップ操作選択ダイアログ
+    if (showTapModeDialog) {
+        AlertDialog(
+            onDismissRequest = { showTapModeDialog = false },
+            title = { Text("タップ操作を選択") },
+            text = {
+                Column {
+                    TapMode.values().forEach { mode ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    tapMode = mode
+                                    settingsRepository.tapMode = mode
+                                    showTapModeDialog = false
+                                }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = tapMode == mode,
+                                onClick = {
+                                    tapMode = mode
+                                    settingsRepository.tapMode = mode
+                                    showTapModeDialog = false
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = when (mode) {
+                                    TapMode.SINGLE_TAP -> "タップ"
+                                    TapMode.LONG_TAP -> "長押し"
+                                },
+                                fontSize = 18.sp
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showTapModeDialog = false }) {
+                    Text("キャンセル")
+                }
+            }
+        )
+    }
+
     // リセット確認ダイアログ
     if (showResetDialog) {
         AlertDialog(
@@ -193,6 +271,48 @@ fun AppSettingsScreen(
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun SettingsSelectItem(
+    title: String,
+    description: String,
+    currentValue: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = description,
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+            }
+            Text(
+                text = currentValue,
+                fontSize = 16.sp,
+                color = Color(0xFF1976D2),
+                fontWeight = FontWeight.Medium
+            )
+        }
     }
 }
 
