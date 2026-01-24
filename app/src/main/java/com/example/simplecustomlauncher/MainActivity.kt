@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import com.example.simplecustomlauncher.ui.theme.SimpleCustomLauncherTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,7 +52,7 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
 
         setContent {
-            MaterialTheme {
+            SimpleCustomLauncherTheme {
                 Surface(
                     modifier = Modifier
                         .fillMaxSize()
