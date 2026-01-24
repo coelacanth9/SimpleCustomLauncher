@@ -49,7 +49,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
+import com.example.simplecustomlauncher.R
 import com.example.simplecustomlauncher.HomeHeader
 import com.example.simplecustomlauncher.MainScreenState
 import com.example.simplecustomlauncher.MainViewModel
@@ -376,6 +378,9 @@ private fun ShortcutIcon(
     appIcon: android.graphics.drawable.Drawable?,
     size: Dp
 ) {
+    val context = LocalContext.current
+    val shortcutHelper = remember { ShortcutHelper(context) }
+
     when (item.type) {
         ShortcutType.APP, ShortcutType.INTENT -> {
             if (appIcon != null) {
@@ -404,10 +409,42 @@ private fun ShortcutIcon(
             Icon(Icons.Default.Settings, "設定", Modifier.size(size), Color(0xFF757575))
         }
         ShortcutType.PHONE -> {
-            Icon(Icons.Default.Phone, item.label, Modifier.size(size), Color(0xFF4CAF50))
+            // 電話アプリのアイコンを取得
+            val phoneIcon = remember {
+                shortcutHelper.getAppIcon("com.google.android.dialer")
+                    ?: shortcutHelper.getAppIcon("com.android.dialer")
+            }
+            if (phoneIcon != null) {
+                val bitmap = remember(phoneIcon) { phoneIcon.toBitmap(128, 128) }
+                Image(bitmap = bitmap.asImageBitmap(), contentDescription = item.label, modifier = Modifier.size(size))
+            } else {
+                Icon(Icons.Default.Phone, item.label, Modifier.size(size), Color(0xFF4CAF50))
+            }
         }
         ShortcutType.SMS -> {
-            Icon(Icons.Default.Email, item.label, Modifier.size(size), Color(0xFF2196F3))
+            // SMSアプリのアイコンを取得
+            val smsIcon = remember {
+                shortcutHelper.getAppIcon("com.google.android.apps.messaging")
+                    ?: shortcutHelper.getAppIcon("com.android.mms")
+            }
+            if (smsIcon != null) {
+                val bitmap = remember(smsIcon) { smsIcon.toBitmap(128, 128) }
+                Image(bitmap = bitmap.asImageBitmap(), contentDescription = item.label, modifier = Modifier.size(size))
+            } else {
+                Icon(Icons.Default.Email, item.label, Modifier.size(size), Color(0xFF2196F3))
+            }
+        }
+        ShortcutType.DIALER -> {
+            // カスタムキーパッドアイコン
+            val dialerIcon = remember {
+                ContextCompat.getDrawable(context, R.drawable.ic_phone_keypad)
+            }
+            if (dialerIcon != null) {
+                val bitmap = remember(dialerIcon) { dialerIcon.toBitmap(128, 128) }
+                Image(bitmap = bitmap.asImageBitmap(), contentDescription = item.label, modifier = Modifier.size(size))
+            } else {
+                Icon(Icons.Default.Phone, item.label, Modifier.size(size), Color(0xFF4CAF50))
+            }
         }
         ShortcutType.EMPTY -> { }
     }

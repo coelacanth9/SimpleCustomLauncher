@@ -1,6 +1,11 @@
 package com.example.simplecustomlauncher.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
+import android.provider.ContactsContract
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,12 +26,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import com.example.simplecustomlauncher.AppInfo
 import com.example.simplecustomlauncher.ShortcutData
 import com.example.simplecustomlauncher.ShortcutHelper
 import com.example.simplecustomlauncher.data.ShortcutItem
 import com.example.simplecustomlauncher.data.ShortcutType
+import com.example.simplecustomlauncher.ui.components.ContactTypeDialog
 
 /**
  * 画面状態
@@ -48,7 +55,16 @@ data class InternalFeature(
 
 val internalFeatures = listOf(
     InternalFeature(ShortcutType.CALENDAR, "シンプルカレンダー", "📅"),
-    InternalFeature(ShortcutType.MEMO, "メモ帳", "📝")
+    InternalFeature(ShortcutType.MEMO, "メモ帳", "📝"),
+    InternalFeature(ShortcutType.DIALER, "電話（キーパッド）", "📞")
+)
+
+/**
+ * 連絡先情報
+ */
+data class ContactInfo(
+    val name: String,
+    val phoneNumber: String
 )
 
 /**
@@ -62,6 +78,7 @@ fun ShortcutAddScreen(
     onSelectApp: (AppInfo) -> Unit,
     onSelectShortcut: (ShortcutData) -> Unit,
     onSelectInternal: (InternalFeature) -> Unit,
+    onSelectContact: (name: String, phoneNumber: String, type: ShortcutType) -> Unit = { _, _, _ -> },
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -69,6 +86,43 @@ fun ShortcutAddScreen(
 
     var screenState by remember { mutableStateOf<SelectScreenState>(SelectScreenState.Main) }
     var shortcuts by remember { mutableStateOf<List<ShortcutData>>(emptyList()) }
+
+    // 連絡先選択の状態
+    var selectedContact by remember { mutableStateOf<ContactInfo?>(null) }
+    var showContactTypeDialog by remember { mutableStateOf(false) }
+
+    // 連絡先ピッカー
+    val contactPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickContact()
+    ) { uri ->
+        uri?.let {
+            // 連絡先から名前と電話番号を取得
+            val contactInfo = getContactInfo(context, it)
+            if (contactInfo != null) {
+                selectedContact = contactInfo
+                showContactTypeDialog = true
+            }
+        }
+    }
+
+    // 権限リクエスト
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            contactPickerLauncher.launch(null)
+        }
+    }
+
+    // 連絡先選択を開始
+    val startContactPicker: () -> Unit = {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS)
+            == PackageManager.PERMISSION_GRANTED) {
+            contactPickerLauncher.launch(null)
+        } else {
+            permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -105,6 +159,7 @@ fun ShortcutAddScreen(
                     onSelectUnplaced = onSelectUnplaced,
                     onSelectInternal = onSelectInternal,
                     onGoToAppList = { screenState = SelectScreenState.AppList },
+                    onContactPicker = startContactPicker,
                     modifier = Modifier.padding(paddingValues)
                 )
             }
@@ -130,6 +185,27 @@ fun ShortcutAddScreen(
             }
         }
     }
+
+    // 連絡先タイプ選択ダイアログ
+    if (showContactTypeDialog && selectedContact != null) {
+        ContactTypeDialog(
+            contactName = selectedContact!!.name,
+            onSelectPhone = {
+                onSelectContact(selectedContact!!.name, selectedContact!!.phoneNumber, ShortcutType.PHONE)
+                showContactTypeDialog = false
+                selectedContact = null
+            },
+            onSelectSms = {
+                onSelectContact(selectedContact!!.name, selectedContact!!.phoneNumber, ShortcutType.SMS)
+                showContactTypeDialog = false
+                selectedContact = null
+            },
+            onDismiss = {
+                showContactTypeDialog = false
+                selectedContact = null
+            }
+        )
+    }
 }
 
 /**
@@ -146,12 +222,49 @@ fun SlotEditScreen(
     onSelectApp: (AppInfo) -> Unit,
     onSelectShortcut: (ShortcutData) -> Unit,
     onSelectInternal: (InternalFeature) -> Unit,
+    onSelectContact: (name: String, phoneNumber: String, type: ShortcutType) -> Unit = { _, _, _ -> },
     onClear: () -> Unit,
     onDeleteRow: () -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val helper = remember { ShortcutHelper(context) }
+
+    // 連絡先選択の状態
+    var selectedContact by remember { mutableStateOf<ContactInfo?>(null) }
+    var showContactTypeDialog by remember { mutableStateOf(false) }
+
+    // 連絡先ピッカー
+    val contactPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickContact()
+    ) { uri ->
+        uri?.let {
+            val contactInfo = getContactInfo(context, it)
+            if (contactInfo != null) {
+                selectedContact = contactInfo
+                showContactTypeDialog = true
+            }
+        }
+    }
+
+    // 権限リクエスト
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            contactPickerLauncher.launch(null)
+        }
+    }
+
+    // 連絡先選択を開始
+    val startContactPicker: () -> Unit = {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS)
+            == PackageManager.PERMISSION_GRANTED) {
+            contactPickerLauncher.launch(null)
+        } else {
+            permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+        }
+    }
 
     var screenState by remember { mutableStateOf<SelectScreenState>(SelectScreenState.Main) }
     var shortcuts by remember { mutableStateOf<List<ShortcutData>>(emptyList()) }
@@ -194,6 +307,7 @@ fun SlotEditScreen(
                     onSelectPlaced = onSelectPlaced,
                     onSelectInternal = onSelectInternal,
                     onGoToAppList = { screenState = SelectScreenState.AppList },
+                    onContactPicker = startContactPicker,
                     onClear = onClear,
                     onDeleteRow = onDeleteRow,
                     modifier = Modifier.padding(paddingValues)
@@ -221,6 +335,27 @@ fun SlotEditScreen(
             }
         }
     }
+
+    // 連絡先タイプ選択ダイアログ
+    if (showContactTypeDialog && selectedContact != null) {
+        ContactTypeDialog(
+            contactName = selectedContact!!.name,
+            onSelectPhone = {
+                onSelectContact(selectedContact!!.name, selectedContact!!.phoneNumber, ShortcutType.PHONE)
+                showContactTypeDialog = false
+                selectedContact = null
+            },
+            onSelectSms = {
+                onSelectContact(selectedContact!!.name, selectedContact!!.phoneNumber, ShortcutType.SMS)
+                showContactTypeDialog = false
+                selectedContact = null
+            },
+            onDismiss = {
+                showContactTypeDialog = false
+                selectedContact = null
+            }
+        )
+    }
 }
 
 // ============ 共通コンポーネント ============
@@ -231,6 +366,7 @@ private fun MainSelectContent(
     onSelectUnplaced: (ShortcutItem) -> Unit,
     onSelectInternal: (InternalFeature) -> Unit,
     onGoToAppList: () -> Unit,
+    onContactPicker: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -244,6 +380,15 @@ private fun MainSelectContent(
                 icon = "📱",
                 text = "アプリ一覧から選ぶ",
                 onClick = onGoToAppList
+            )
+        }
+
+        // 連絡先から追加
+        item {
+            NavigationCard(
+                icon = "👤",
+                text = "連絡先から追加",
+                onClick = onContactPicker
             )
         }
 
@@ -284,6 +429,7 @@ private fun SlotEditMainContent(
     onSelectPlaced: (ShortcutItem) -> Unit,
     onSelectInternal: (InternalFeature) -> Unit,
     onGoToAppList: () -> Unit,
+    onContactPicker: () -> Unit,
     onClear: () -> Unit,
     onDeleteRow: () -> Unit,
     modifier: Modifier = Modifier
@@ -299,6 +445,15 @@ private fun SlotEditMainContent(
                 icon = "📱",
                 text = "アプリ一覧から選ぶ",
                 onClick = onGoToAppList
+            )
+        }
+
+        // 連絡先から追加
+        item {
+            NavigationCard(
+                icon = "👤",
+                text = "連絡先から追加",
+                onClick = onContactPicker
             )
         }
 
@@ -677,6 +832,7 @@ private fun ShortcutCard(
                     ShortcutType.APP -> "📱"
                     ShortcutType.PHONE -> "📞"
                     ShortcutType.SMS -> "💬"
+                    ShortcutType.DIALER -> "📞"
                     ShortcutType.INTENT -> "🔗"
                     ShortcutType.CALENDAR -> "📅"
                     ShortcutType.MEMO -> "📝"
@@ -707,6 +863,8 @@ private fun InternalFeatureCard(
     feature: InternalFeature,
     onClick: () -> Unit
 ) {
+    val context = LocalContext.current
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -718,7 +876,22 @@ private fun InternalFeatureCard(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = feature.icon, fontSize = 24.sp)
+            if (feature.type == ShortcutType.DIALER) {
+                // カスタムアイコン
+                val dialerIcon = remember {
+                    ContextCompat.getDrawable(context, com.example.simplecustomlauncher.R.drawable.ic_phone_keypad)
+                }
+                if (dialerIcon != null) {
+                    val bitmap = remember(dialerIcon) { dialerIcon.toBitmap(64, 64) }
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = feature.label,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            } else {
+                Text(text = feature.icon, fontSize = 24.sp)
+            }
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = feature.label,
@@ -806,4 +979,45 @@ private fun DrawableImage(drawable: Drawable, size: Int) {
         contentDescription = null,
         modifier = Modifier.size(size.dp)
     )
+}
+
+/**
+ * 連絡先URIから名前と電話番号を取得
+ */
+private fun getContactInfo(context: android.content.Context, contactUri: android.net.Uri): ContactInfo? {
+    var name: String? = null
+    var phoneNumber: String? = null
+
+    // 連絡先の名前を取得
+    context.contentResolver.query(
+        contactUri,
+        arrayOf(ContactsContract.Contacts.DISPLAY_NAME, ContactsContract.Contacts._ID),
+        null, null, null
+    )?.use { cursor ->
+        if (cursor.moveToFirst()) {
+            name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME))
+            val contactId = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID))
+
+            // 電話番号を取得
+            context.contentResolver.query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+                "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
+                arrayOf(contactId),
+                null
+            )?.use { phoneCursor ->
+                if (phoneCursor.moveToFirst()) {
+                    phoneNumber = phoneCursor.getString(
+                        phoneCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                    )
+                }
+            }
+        }
+    }
+
+    return if (name != null && phoneNumber != null) {
+        ContactInfo(name!!, phoneNumber!!)
+    } else {
+        null
+    }
 }

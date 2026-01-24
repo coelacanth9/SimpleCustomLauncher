@@ -185,6 +185,12 @@ fun MainLauncherScreen() {
                     }
                     viewModel.navigateToHome()
                 },
+                onSelectContact = { name, phoneNumber, type ->
+                    viewModel.targetSlot?.let { (row, col) ->
+                        viewModel.placeContact(name, phoneNumber, type, row, col)
+                    }
+                    viewModel.navigateToHome()
+                },
                 onBack = { viewModel.navigateToHome() }
             )
         }
@@ -214,6 +220,10 @@ fun MainLauncherScreen() {
                 },
                 onSelectInternal = { feature ->
                     viewModel.placeInternalFeature(feature.type, feature.label, state.row, state.column)
+                    viewModel.navigateToHome()
+                },
+                onSelectContact = { name, phoneNumber, type ->
+                    viewModel.placeContact(name, phoneNumber, type, state.row, state.column)
                     viewModel.navigateToHome()
                 },
                 onClear = {

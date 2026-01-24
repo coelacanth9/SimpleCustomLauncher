@@ -199,6 +199,7 @@ private fun ShortcutListItem(
                     ShortcutType.MEMO -> "📝"
                     ShortcutType.SETTINGS -> "⚙️"
                     ShortcutType.EMPTY -> ""
+                    ShortcutType.DIALER -> "📞"
                 },
                 fontSize = 24.sp
             )

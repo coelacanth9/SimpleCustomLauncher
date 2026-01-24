@@ -10,6 +10,7 @@ enum class ShortcutType {
     APP,            // アプリ起動
     PHONE,          // 電話をかける
     SMS,            // SMSを送る
+    DIALER,         // 電話アプリ（キーパッド画面で開く）
     INTENT,         // 外部アプリから受け取ったIntent（LINE等）
     CALENDAR,       // アプリ内カレンダー
     MEMO,           // アプリ内メモ帳
@@ -44,13 +45,16 @@ data class ShortcutItem(
             }
             ShortcutType.PHONE -> {
                 phoneNumber?.let { number ->
-                    Intent(Intent.ACTION_CALL, Uri.parse("tel:$number"))
+                    Intent(Intent.ACTION_DIAL, Uri.parse("tel:$number"))
                 }
             }
             ShortcutType.SMS -> {
                 phoneNumber?.let { number ->
                     Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:$number"))
                 }
+            }
+            ShortcutType.DIALER -> {
+                Intent(Intent.ACTION_DIAL)
             }
             ShortcutType.INTENT -> {
                 intentUri?.let { uri ->

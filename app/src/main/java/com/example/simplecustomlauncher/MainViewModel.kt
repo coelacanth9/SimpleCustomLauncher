@@ -225,6 +225,17 @@ class MainViewModel(
         placeShortcut(item, row, column)
     }
 
+    fun placeContact(name: String, phoneNumber: String, type: ShortcutType, row: Int, column: Int) {
+        val item = ShortcutItem(
+            id = UUID.randomUUID().toString(),
+            type = type,
+            label = name,
+            phoneNumber = phoneNumber
+        )
+        shortcutRepository.saveShortcut(item)
+        placeShortcut(item, row, column)
+    }
+
     fun swapShortcuts(currentShortcut: ShortcutItem?, targetShortcut: ShortcutItem, row: Int, column: Int) {
         val placements = getAllPlacements()
         val existingPlacement = placements.find { it.shortcutId == targetShortcut.id }
@@ -288,7 +299,28 @@ class MainViewModel(
                         launchPinShortcut(context, item)
                     }
                 }
-                ShortcutType.PHONE, ShortcutType.SMS -> {
+                ShortcutType.PHONE -> {
+                    item.toIntent()?.let { intent ->
+                        // 電話アプリを明示的に指定（Zoomなどに奪われないように）
+                        val dialerPackages = listOf(
+                            "com.google.android.dialer",
+                            "com.android.dialer"
+                        )
+                        val installedDialer = dialerPackages.firstOrNull { pkg ->
+                            shortcutHelper.getAppIcon(pkg) != null
+                        }
+                        if (installedDialer != null) {
+                            intent.setPackage(installedDialer)
+                        }
+                        context.startActivity(intent)
+                    }
+                }
+                ShortcutType.SMS -> {
+                    item.toIntent()?.let { intent ->
+                        context.startActivity(intent)
+                    }
+                }
+                ShortcutType.DIALER -> {
                     item.toIntent()?.let { intent ->
                         context.startActivity(intent)
                     }
