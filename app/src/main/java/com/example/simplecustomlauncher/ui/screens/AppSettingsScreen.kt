@@ -155,7 +155,7 @@ fun AppSettingsScreen(
             item {
                 SettingsActionItem(
                     title = "レイアウト編集",
-                    description = "ショートカットの配置を変更します",
+                    description = "アプリの配置を変更します",
                     onClick = onEnterEditMode
                 )
             }
@@ -168,7 +168,7 @@ fun AppSettingsScreen(
             item {
                 SettingsDangerItem(
                     title = "初期状態にリセット",
-                    description = "配置をデフォルトに戻します",
+                    description = "アプリの配置がデフォルトに戻ります",
                     onClick = { showResetDialog = true }
                 )
             }
@@ -180,7 +180,7 @@ fun AppSettingsScreen(
             item {
                 SettingsDangerItem(
                     title = "レイアウトをクリア",
-                    description = "すべての行と配置を削除します",
+                    description = "すべての行と配置が削除されます",
                     onClick = { showClearDialog = true }
                 )
             }
@@ -302,8 +302,8 @@ fun AppSettingsScreen(
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
-            title = { Text("初期状態に戻す") },
-            text = { Text("現在の配置がすべて消去され、デフォルトの配置に戻ります。よろしいですか？") },
+            title = { Text("初期状態にリセット") },
+            text = { Text("現在の配置がすべて消去され、デフォルトの配置に戻ります。この操作は取り消せません。よろしいですか？") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -311,7 +311,7 @@ fun AppSettingsScreen(
                         showResetDialog = false
                     }
                 ) {
-                    Text("リセット", color = MaterialTheme.colorScheme.error)
+                    Text("初期状態に戻す", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -326,8 +326,8 @@ fun AppSettingsScreen(
     if (showClearDialog) {
         AlertDialog(
             onDismissRequest = { showClearDialog = false },
-            title = { Text("レイアウトを削除") },
-            text = { Text("すべての行とショートカット配置が削除されます。この操作は取り消せません。よろしいですか？") },
+            title = { Text("レイアウトをクリア") },
+            text = { Text("すべての行とアプリ配置が削除されます。この操作は取り消せません。よろしいですか？") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -335,7 +335,7 @@ fun AppSettingsScreen(
                         showClearDialog = false
                     }
                 ) {
-                    Text("削除", color = MaterialTheme.colorScheme.error)
+                    Text("削除する", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
