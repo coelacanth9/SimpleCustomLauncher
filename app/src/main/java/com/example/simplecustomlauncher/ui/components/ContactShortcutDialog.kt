@@ -8,10 +8,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.simplecustomlauncher.R
 
 /**
  * 連絡先の種類選択ダイアログ（電話 or SMS）
@@ -44,7 +46,7 @@ fun ContactTypeDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "どちらのショートカットを作成しますか？",
+                    text = stringResource(R.string.select_contact_type),
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -69,12 +71,12 @@ fun ContactTypeDialog(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
                             Text(
-                                text = "電話をかける",
+                                text = stringResource(R.string.shortcut_type_call),
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Medium
                             )
                             Text(
-                                text = "タップで直接発信",
+                                text = stringResource(R.string.tap_to_call),
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -102,12 +104,12 @@ fun ContactTypeDialog(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
                             Text(
-                                text = "SMSを送る",
+                                text = stringResource(R.string.shortcut_type_sms),
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Medium
                             )
                             Text(
-                                text = "タップでメッセージ作成",
+                                text = stringResource(R.string.tap_to_message),
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -118,7 +120,7 @@ fun ContactTypeDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 TextButton(onClick = onDismiss) {
-                    Text("キャンセル", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }

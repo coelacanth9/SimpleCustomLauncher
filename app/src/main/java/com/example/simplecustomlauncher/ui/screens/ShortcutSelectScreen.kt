@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,6 +34,7 @@ import com.example.simplecustomlauncher.ShortcutData
 import com.example.simplecustomlauncher.ShortcutHelper
 import com.example.simplecustomlauncher.data.ShortcutItem
 import com.example.simplecustomlauncher.data.ShortcutType
+import com.example.simplecustomlauncher.R
 import com.example.simplecustomlauncher.ui.components.ContactTypeDialog
 
 /**
@@ -49,15 +51,15 @@ sealed class SelectScreenState {
  */
 data class InternalFeature(
     val type: ShortcutType,
-    val label: String,
+    val labelResId: Int,
     val icon: String
 )
 
 val internalFeatures = listOf(
-    InternalFeature(ShortcutType.CALENDAR, "カレンダー", "📅"),
-    InternalFeature(ShortcutType.MEMO, "メモ帳", "📝"),
-    InternalFeature(ShortcutType.DIALER, "電話", "📞"),
-    InternalFeature(ShortcutType.ALL_APPS, "すべてのアプリ", "📱")
+    InternalFeature(ShortcutType.CALENDAR, R.string.shortcut_type_calendar, "📅"),
+    InternalFeature(ShortcutType.MEMO, R.string.shortcut_type_memo, "📝"),
+    InternalFeature(ShortcutType.DIALER, R.string.shortcut_type_phone, "📞"),
+    InternalFeature(ShortcutType.ALL_APPS, R.string.shortcut_type_all_apps, "📱")
 )
 
 /**
@@ -131,8 +133,8 @@ fun ShortcutAddScreen(
                 title = {
                     Text(
                         text = when (screenState) {
-                            is SelectScreenState.Main -> "ショートカットを追加"
-                            is SelectScreenState.AppList -> "アプリ一覧"
+                            is SelectScreenState.Main -> stringResource(R.string.add_shortcut)
+                            is SelectScreenState.AppList -> stringResource(R.string.app_list)
                             is SelectScreenState.AppShortcuts -> (screenState as SelectScreenState.AppShortcuts).app.label
                         },
                         fontSize = 20.sp,
@@ -147,7 +149,7 @@ fun ShortcutAddScreen(
                             is SelectScreenState.AppShortcuts -> screenState = SelectScreenState.AppList
                         }
                     }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "戻る")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -280,8 +282,8 @@ fun SlotEditScreen(
                 title = {
                     Text(
                         text = when (screenState) {
-                            is SelectScreenState.Main -> "このスロットに配置"
-                            is SelectScreenState.AppList -> "アプリ一覧"
+                            is SelectScreenState.Main -> stringResource(R.string.place_in_slot)
+                            is SelectScreenState.AppList -> stringResource(R.string.app_list)
                             is SelectScreenState.AppShortcuts -> (screenState as SelectScreenState.AppShortcuts).app.label
                         },
                         fontSize = 20.sp,
@@ -296,7 +298,7 @@ fun SlotEditScreen(
                             is SelectScreenState.AppShortcuts -> screenState = SelectScreenState.AppList
                         }
                     }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "戻る")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -369,43 +371,47 @@ fun SlotEditScreen(
     if (showColumnsDialog) {
         AlertDialog(
             onDismissRequest = { showColumnsDialog = false },
-            title = { Text("分割数を変更") },
+            title = { Text(stringResource(R.string.change_column_count)) },
             text = {
-                Column {
-                    Text("この行の分割数を選んでください", modifier = Modifier.padding(bottom = 16.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        listOf(1, 2, 3).forEach { columns ->
-                            Button(
-                                onClick = {
-                                    onChangeColumns(columns)
-                                    showColumnsDialog = false
-                                },
-                                modifier = Modifier.weight(1f),
-                                colors = if (columns == currentColumns) {
-                                    ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                                } else {
-                                    ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.outline)
-                                }
-                            ) {
-                                Text("${columns}分割")
-                            }
-                        }
-                    }
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     Text(
-                        text = "※分割数を減らすと、はみ出たショートカットは未配置になります",
+                        text = stringResource(R.string.select_row_column_count),
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    // 各分割数オプション
+                    val descriptions = listOf(
+                        R.string.column_1_desc,
+                        R.string.column_2_desc,
+                        R.string.column_3_desc
+                    )
+                    listOf(1, 2, 3).forEachIndexed { index, columns ->
+                        ColumnChangeOptionCard(
+                            columns = columns,
+                            description = stringResource(descriptions[index]),
+                            isSelected = columns == currentColumns,
+                            onClick = {
+                                onChangeColumns(columns)
+                                showColumnsDialog = false
+                            }
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(R.string.column_reduce_warning),
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 12.dp)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             },
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showColumnsDialog = false }) {
-                    Text("キャンセル")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -432,7 +438,7 @@ private fun MainSelectContent(
         item {
             NavigationCard(
                 icon = "📱",
-                text = "アプリ一覧から選ぶ",
+                text = stringResource(R.string.select_from_app_list),
                 onClick = onGoToAppList
             )
         }
@@ -441,14 +447,14 @@ private fun MainSelectContent(
         item {
             NavigationCard(
                 icon = "👤",
-                text = "連絡先から追加",
+                text = stringResource(R.string.add_from_contact),
                 onClick = onContactPicker
             )
         }
 
         // アプリ内機能
         item {
-            SectionHeader(text = "アプリ内機能")
+            SectionHeader(text = stringResource(R.string.internal_features))
         }
         items(internalFeatures) { feature ->
             InternalFeatureCard(
@@ -460,12 +466,12 @@ private fun MainSelectContent(
         // 未配置ショートカット
         if (unplacedShortcuts.isNotEmpty()) {
             item {
-                SectionHeader(text = "未配置ショートカット")
+                SectionHeader(text = stringResource(R.string.unplaced_shortcuts))
             }
             items(unplacedShortcuts) { shortcut ->
                 ShortcutCard(
                     shortcut = shortcut,
-                    subtitle = "タップで配置",
+                    subtitleResId = R.string.tap_to_place,
                     backgroundColor = MaterialTheme.colorScheme.surface,
                     onClick = { onSelectUnplaced(shortcut) }
                 )
@@ -500,7 +506,7 @@ private fun SlotEditMainContent(
         item {
             NavigationCard(
                 icon = "📱",
-                text = "アプリ一覧から選ぶ",
+                text = stringResource(R.string.select_from_app_list),
                 onClick = onGoToAppList
             )
         }
@@ -509,14 +515,14 @@ private fun SlotEditMainContent(
         item {
             NavigationCard(
                 icon = "👤",
-                text = "連絡先から追加",
+                text = stringResource(R.string.add_from_contact),
                 onClick = onContactPicker
             )
         }
 
         // アプリ内機能
         item {
-            SectionHeader(text = "アプリ内機能")
+            SectionHeader(text = stringResource(R.string.internal_features))
         }
         items(internalFeatures) { feature ->
             InternalFeatureCard(
@@ -528,12 +534,12 @@ private fun SlotEditMainContent(
         // 未配置ショートカット
         if (unplacedShortcuts.isNotEmpty()) {
             item {
-                SectionHeader(text = "未配置ショートカット")
+                SectionHeader(text = stringResource(R.string.unplaced_shortcuts))
             }
             items(unplacedShortcuts) { shortcut ->
                 ShortcutCard(
                     shortcut = shortcut,
-                    subtitle = "タップで配置",
+                    subtitleResId = R.string.tap_to_place,
                     backgroundColor = MaterialTheme.colorScheme.surface,
                     onClick = { onSelectUnplaced(shortcut) }
                 )
@@ -543,12 +549,12 @@ private fun SlotEditMainContent(
         // 配置済みと入れ替え
         if (placedShortcuts.isNotEmpty()) {
             item {
-                SectionHeader(text = "配置済みと入れ替え")
+                SectionHeader(text = stringResource(R.string.swap_with_placed))
             }
             items(placedShortcuts) { shortcut ->
                 ShortcutCard(
                     shortcut = shortcut,
-                    subtitle = "タップで入れ替え",
+                    subtitleResId = R.string.tap_to_swap,
                     backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                     onClick = { onSelectPlaced(shortcut) }
@@ -567,7 +573,7 @@ private fun SlotEditMainContent(
         if (currentShortcut != null && currentShortcut.type != ShortcutType.EMPTY) {
             item {
                 ActionCard(
-                    text = "このスロットを空にする",
+                    text = stringResource(R.string.clear_slot),
                     color = MaterialTheme.colorScheme.error,
                     onClick = onClear
                 )
@@ -580,7 +586,7 @@ private fun SlotEditMainContent(
         // この行の分割数を変更
         item {
             ActionCard(
-                text = "この行の分割数を変更（現在: ${currentColumns}分割）",
+                text = stringResource(R.string.current_column_count, currentColumns),
                 color = MaterialTheme.colorScheme.primary,
                 onClick = onShowColumnsDialog
             )
@@ -592,7 +598,7 @@ private fun SlotEditMainContent(
         }
         item {
             ActionCard(
-                text = "この行全体を削除する",
+                text = stringResource(R.string.delete_row),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 onClick = onDeleteRow
             )
@@ -605,7 +611,7 @@ private fun SlotEditMainContent(
             }
             item {
                 ActionCard(
-                    text = "このページを削除する",
+                    text = stringResource(R.string.delete_page),
                     color = MaterialTheme.colorScheme.error,
                     onClick = onDeletePage
                 )
@@ -718,12 +724,12 @@ private fun AppListContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            placeholder = { Text("アプリ名で検索") },
+            placeholder = { Text(stringResource(R.string.search_app_name)) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
                     IconButton(onClick = { searchQuery = "" }) {
-                        Icon(Icons.Default.Clear, contentDescription = "クリア")
+                        Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.clear))
                     }
                 }
             },
@@ -732,7 +738,7 @@ private fun AppListContent(
         )
 
         Text(
-            text = "${filteredApps.size}件のアプリ",
+            text = stringResource(R.string.app_count, filteredApps.size),
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
@@ -784,7 +790,7 @@ private fun AppShortcutsContent(
                     Spacer(Modifier.width(16.dp))
                     Column {
                         Text(
-                            text = "アプリを起動",
+                            text = stringResource(R.string.launch_app),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -802,14 +808,14 @@ private fun AppShortcutsContent(
         if (shortcuts.isEmpty()) {
             item {
                 Text(
-                    text = "このアプリにはショートカットがありません",
+                    text = stringResource(R.string.no_shortcuts_for_app),
                     modifier = Modifier.padding(16.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         } else {
             item {
-                SectionHeader(text = "ショートカット (${shortcuts.size}件)")
+                SectionHeader(text = stringResource(R.string.shortcut_count, shortcuts.size))
             }
             items(shortcuts) { shortcut ->
                 Card(
@@ -898,7 +904,7 @@ private fun NavigationCard(
 @Composable
 private fun ShortcutCard(
     shortcut: ShortcutItem,
-    subtitle: String,
+    subtitleResId: Int,
     backgroundColor: Color,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     onClick: () -> Unit
@@ -932,13 +938,13 @@ private fun ShortcutCard(
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = shortcut.label,
+                    text = getLocalizedLabel(shortcut),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium,
                     color = contentColor
                 )
                 Text(
-                    text = subtitle,
+                    text = stringResource(subtitleResId),
                     fontSize = 12.sp,
                     color = contentColor.copy(alpha = 0.7f)
                 )
@@ -954,6 +960,7 @@ private fun InternalFeatureCard(
 ) {
     val context = LocalContext.current
     val contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+    val label = stringResource(feature.labelResId)
 
     Card(
         modifier = Modifier
@@ -969,13 +976,13 @@ private fun InternalFeatureCard(
             if (feature.type == ShortcutType.DIALER) {
                 // カスタムアイコン
                 val dialerIcon = remember {
-                    ContextCompat.getDrawable(context, com.example.simplecustomlauncher.R.drawable.ic_phone_keypad)
+                    ContextCompat.getDrawable(context, R.drawable.ic_phone_keypad)
                 }
                 if (dialerIcon != null) {
                     val bitmap = remember(dialerIcon) { dialerIcon.toBitmap(64, 64) }
                     Image(
                         bitmap = bitmap.asImageBitmap(),
-                        contentDescription = feature.label,
+                        contentDescription = label,
                         modifier = Modifier.size(24.dp),
                         colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(contentColor)
                     )
@@ -985,7 +992,7 @@ private fun InternalFeatureCard(
             }
             Spacer(modifier = Modifier.width(12.dp))
             Text(
-                text = feature.label,
+                text = label,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium,
                 color = contentColor
@@ -1071,6 +1078,68 @@ private fun DrawableImage(drawable: Drawable, size: Int) {
         contentDescription = null,
         modifier = Modifier.size(size.dp)
     )
+}
+
+@Composable
+private fun ColumnChangeOptionCard(
+    columns: Int,
+    description: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 分割数のプレビュー
+            Row(
+                modifier = Modifier.width(80.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                repeat(columns) {
+                    Card(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(32.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {}
+                }
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column {
+                Text(
+                    text = stringResource(R.string.column_count_format, columns),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = description,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
 }
 
 /**

@@ -38,6 +38,7 @@ import com.example.simplecustomlauncher.ui.screens.SlotEditScreen
 import java.time.LocalDate
 import java.util.UUID
 import android.content.pm.ActivityInfo
+import com.example.simplecustomlauncher.R
 class MainActivity : ComponentActivity() {
 
     private lateinit var shortcutRepository: ShortcutRepository
@@ -115,14 +116,14 @@ class MainActivity : ComponentActivity() {
                 val item = ShortcutItem(
                     id = UUID.randomUUID().toString(),
                     type = ShortcutType.INTENT,
-                    label = shortcutInfo.shortLabel?.toString() ?: "ショートカット",
+                    label = shortcutInfo.shortLabel?.toString() ?: getString(R.string.shortcut),
                     packageName = shortcutInfo.`package`
                 )
 
                 shortcutRepository.savePinShortcutInfo(item.id, shortcutInfo.id, shortcutInfo.`package`)
                 shortcutRepository.saveShortcut(item)
                 request.accept()
-                Toast.makeText(this, "「${item.label}」を一時保管に追加しました", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.item_added_to_storage, item.label), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -187,7 +188,7 @@ fun MainLauncherScreen(
                 },
                 onSelectInternal = { feature ->
                     viewModel.targetSlot?.let { (page, row, col) ->
-                        viewModel.placeInternalFeature(feature.type, feature.label, page, row, col)
+                        viewModel.placeInternalFeature(feature.type, context.getString(feature.labelResId), page, row, col)
                     }
                     viewModel.navigateToHome()
                 },
@@ -240,7 +241,7 @@ fun MainLauncherScreen(
                     viewModel.navigateToHome()
                 },
                 onSelectInternal = { feature ->
-                    viewModel.placeInternalFeature(feature.type, feature.label, state.pageIndex, state.row, state.column)
+                    viewModel.placeInternalFeature(feature.type, context.getString(feature.labelResId), state.pageIndex, state.row, state.column)
                     viewModel.navigateToHome()
                 },
                 onSelectContact = { name, phoneNumber, type ->

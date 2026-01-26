@@ -14,9 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.simplecustomlauncher.R
 import com.example.simplecustomlauncher.data.SettingsRepository
 import com.example.simplecustomlauncher.data.TapMode
 import com.example.simplecustomlauncher.data.ThemeMode
@@ -56,14 +58,14 @@ fun AppSettingsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "アプリ設定",
+                        text = stringResource(R.string.app_settings),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "戻る")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -79,8 +81,8 @@ fun AppSettingsScreen(
             // ホームアプリ設定
             item {
                 SettingsActionItem(
-                    title = "ホームアプリの設定",
-                    description = "このアプリを標準のホームアプリに設定",
+                    title = stringResource(R.string.home_app_settings),
+                    description = stringResource(R.string.set_as_default_home),
                     onClick = {
                         context.startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
                     }
@@ -93,13 +95,14 @@ fun AppSettingsScreen(
 
             // タップ操作設定
             item {
+                val tapModeLabel = when (tapMode) {
+                    TapMode.SINGLE_TAP -> stringResource(R.string.tap_mode_single)
+                    TapMode.LONG_TAP -> stringResource(R.string.tap_mode_long)
+                }
                 SettingsSelectItem(
-                    title = "起動操作",
-                    description = "アプリを起動するときの操作",
-                    currentValue = when (tapMode) {
-                        TapMode.SINGLE_TAP -> "タップ"
-                        TapMode.LONG_TAP -> "長押し"
-                    },
+                    title = stringResource(R.string.tap_mode),
+                    description = stringResource(R.string.tap_mode_desc),
+                    currentValue = tapModeLabel,
                     onClick = { showTapModeDialog = true }
                 )
             }
@@ -107,8 +110,8 @@ fun AppSettingsScreen(
             // 確認ダイアログ設定
             item {
                 SettingsSwitchItem(
-                    title = "起動時に確認",
-                    description = "アプリを起動する前に確認ダイアログを表示",
+                    title = stringResource(R.string.confirm_before_launch),
+                    description = stringResource(R.string.confirm_before_launch_desc),
                     checked = showConfirmDialog,
                     onCheckedChange = {
                         showConfirmDialog = it
@@ -120,8 +123,8 @@ fun AppSettingsScreen(
             // タップフィードバック設定
             item {
                 SettingsSwitchItem(
-                    title = "タップ時の振動",
-                    description = "タップ時に振動でフィードバック",
+                    title = stringResource(R.string.haptic_feedback),
+                    description = stringResource(R.string.haptic_feedback_desc),
                     checked = tapFeedback,
                     onCheckedChange = {
                         tapFeedback = it
@@ -136,14 +139,15 @@ fun AppSettingsScreen(
 
             // テーマ設定
             item {
+                val themeModeLabel = when (themeMode) {
+                    ThemeMode.LIGHT -> stringResource(R.string.theme_light)
+                    ThemeMode.DARK -> stringResource(R.string.theme_dark)
+                    ThemeMode.SYSTEM -> stringResource(R.string.theme_system)
+                }
                 SettingsSelectItem(
-                    title = "テーマ",
-                    description = "画面の配色を変更",
-                    currentValue = when (themeMode) {
-                        ThemeMode.LIGHT -> "ライト"
-                        ThemeMode.DARK -> "ダーク"
-                        ThemeMode.SYSTEM -> "端末設定に合わせる"
-                    },
+                    title = stringResource(R.string.theme),
+                    description = stringResource(R.string.change_theme_desc),
+                    currentValue = themeModeLabel,
                     onClick = { showThemeModeDialog = true }
                 )
             }
@@ -154,10 +158,12 @@ fun AppSettingsScreen(
 
             // ページ設定
             item {
+                val pageDescription = if (isPremium) stringResource(R.string.multi_page_swipe) else stringResource(R.string.premium_multi_page)
+                val pageValue = if (isPremium) stringResource(R.string.page_count_format, pageCount) else null
                 SettingsPremiumSelectItem(
-                    title = "ホーム画面のページ数",
-                    description = if (isPremium) "スワイプで複数ページを切り替え" else "プレミアム機能：複数ページに対応",
-                    currentValue = if (isPremium) "${pageCount}ページ" else null,
+                    title = stringResource(R.string.home_page_count),
+                    description = pageDescription,
+                    currentValue = pageValue,
                     isPremiumActive = isPremium,
                     onClick = {
                         if (isPremium) {
@@ -172,8 +178,8 @@ fun AppSettingsScreen(
             // ループページング
             item {
                 SettingsPremiumSwitchItem(
-                    title = "ページのループ",
-                    description = "最後のページから最初のページへ移動可能",
+                    title = stringResource(R.string.page_loop),
+                    description = stringResource(R.string.page_loop_desc),
                     checked = loopPagingEnabled,
                     enabled = isPremium && pageCount > 1,
                     isPremiumFeature = true,
@@ -191,8 +197,8 @@ fun AppSettingsScreen(
             // レイアウト編集
             item {
                 SettingsActionItem(
-                    title = "レイアウト編集",
-                    description = "アプリの配置を変更します",
+                    title = stringResource(R.string.layout_edit),
+                    description = stringResource(R.string.edit_layout_desc),
                     onClick = onEnterEditMode
                 )
             }
@@ -204,8 +210,8 @@ fun AppSettingsScreen(
             // 初期状態に戻す
             item {
                 SettingsDangerItem(
-                    title = "初期状態にリセット",
-                    description = "アプリの配置がデフォルトに戻ります",
+                    title = stringResource(R.string.reset_to_default),
+                    description = stringResource(R.string.reset_layout_desc),
                     onClick = { showResetDialog = true }
                 )
             }
@@ -216,8 +222,8 @@ fun AppSettingsScreen(
             }
             item {
                 SettingsDangerItem(
-                    title = "レイアウトをクリア",
-                    description = "すべての行と配置が削除されます",
+                    title = stringResource(R.string.clear_layout),
+                    description = stringResource(R.string.clear_layout_desc),
                     onClick = { showClearDialog = true }
                 )
             }
@@ -229,7 +235,7 @@ fun AppSettingsScreen(
             // バージョン情報
             item {
                 SettingsInfoItem(
-                    title = "バージョン",
+                    title = stringResource(R.string.version),
                     value = "1.0.0"
                 )
             }
@@ -238,9 +244,12 @@ fun AppSettingsScreen(
 
     // タップ操作選択ダイアログ
     if (showTapModeDialog) {
+        val tapModeSingleLabel = stringResource(R.string.tap_mode_single)
+        val tapModeLongLabel = stringResource(R.string.tap_mode_long)
+        val cancelLabel = stringResource(R.string.cancel)
         AlertDialog(
             onDismissRequest = { showTapModeDialog = false },
-            title = { Text("タップ操作を選択") },
+            title = { Text(stringResource(R.string.select_tap_mode)) },
             text = {
                 Column {
                     TapMode.values().forEach { mode ->
@@ -266,8 +275,8 @@ fun AppSettingsScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = when (mode) {
-                                    TapMode.SINGLE_TAP -> "タップ"
-                                    TapMode.LONG_TAP -> "長押し"
+                                    TapMode.SINGLE_TAP -> tapModeSingleLabel
+                                    TapMode.LONG_TAP -> tapModeLongLabel
                                 },
                                 fontSize = 18.sp
                             )
@@ -278,7 +287,7 @@ fun AppSettingsScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showTapModeDialog = false }) {
-                    Text("キャンセル")
+                    Text(cancelLabel)
                 }
             }
         )
@@ -286,15 +295,19 @@ fun AppSettingsScreen(
 
     // テーマ選択ダイアログ
     if (showThemeModeDialog) {
+        val themeSystemLabel = stringResource(R.string.theme_system)
+        val themeLightLabel = stringResource(R.string.theme_light)
+        val themeDarkLabel = stringResource(R.string.theme_dark)
+        val cancelLabel = stringResource(R.string.cancel)
         AlertDialog(
             onDismissRequest = { showThemeModeDialog = false },
-            title = { Text("テーマを選択") },
+            title = { Text(stringResource(R.string.select_theme)) },
             text = {
                 Column {
                     listOf(
-                        ThemeMode.SYSTEM to "端末設定に合わせる",
-                        ThemeMode.LIGHT to "ライト",
-                        ThemeMode.DARK to "ダーク"
+                        ThemeMode.SYSTEM to themeSystemLabel,
+                        ThemeMode.LIGHT to themeLightLabel,
+                        ThemeMode.DARK to themeDarkLabel
                     ).forEach { (mode, label) ->
                         Row(
                             modifier = Modifier
@@ -329,7 +342,7 @@ fun AppSettingsScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showThemeModeDialog = false }) {
-                    Text("キャンセル")
+                    Text(cancelLabel)
                 }
             }
         )
@@ -339,8 +352,8 @@ fun AppSettingsScreen(
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
-            title = { Text("初期状態にリセット") },
-            text = { Text("現在の配置がすべて消去され、デフォルトの配置に戻ります。この操作は取り消せません。よろしいですか？") },
+            title = { Text(stringResource(R.string.reset_to_default)) },
+            text = { Text(stringResource(R.string.reset_confirm_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -348,12 +361,12 @@ fun AppSettingsScreen(
                         showResetDialog = false
                     }
                 ) {
-                    Text("初期状態に戻す", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.reset_to_default_short), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showResetDialog = false }) {
-                    Text("キャンセル")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -363,8 +376,8 @@ fun AppSettingsScreen(
     if (showClearDialog) {
         AlertDialog(
             onDismissRequest = { showClearDialog = false },
-            title = { Text("レイアウトをクリア") },
-            text = { Text("すべての行とアプリ配置が削除されます。この操作は取り消せません。よろしいですか？") },
+            title = { Text(stringResource(R.string.clear_layout)) },
+            text = { Text(stringResource(R.string.clear_confirm_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -372,12 +385,12 @@ fun AppSettingsScreen(
                         showClearDialog = false
                     }
                 ) {
-                    Text("削除する", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearDialog = false }) {
-                    Text("キャンセル")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -387,10 +400,11 @@ fun AppSettingsScreen(
     if (showPageCountDialog) {
         AlertDialog(
             onDismissRequest = { showPageCountDialog = false },
-            title = { Text("ページ数を選択") },
+            title = { Text(stringResource(R.string.select_page_count)) },
             text = {
                 Column {
                     (1..SettingsRepository.MAX_PAGES).forEach { count ->
+                        val pageLabel = stringResource(R.string.page_count_format, count)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -412,7 +426,7 @@ fun AppSettingsScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "${count}ページ",
+                                text = pageLabel,
                                 fontSize = 18.sp
                             )
                         }
@@ -422,7 +436,7 @@ fun AppSettingsScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showPageCountDialog = false }) {
-                    Text("キャンセル")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -432,12 +446,12 @@ fun AppSettingsScreen(
     if (showPremiumDialog) {
         AlertDialog(
             onDismissRequest = { showPremiumDialog = false },
-            title = { Text("プレミアム機能") },
+            title = { Text(stringResource(R.string.premium_feature)) },
             text = {
                 Column {
-                    Text("複数ページ機能はプレミアム限定です。")
+                    Text(stringResource(R.string.premium_page_only))
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("動画を見るか課金して解除できます。")
+                    Text(stringResource(R.string.premium_unlock_short))
                 }
             },
             confirmButton = {
@@ -447,13 +461,13 @@ fun AppSettingsScreen(
                         showPremiumDialog = false
                     }
                 ) {
-                    Text("動画を見て24時間解除")
+                    Text(stringResource(R.string.watch_ad_unlock))
                 }
             },
             dismissButton = {
                 Row {
                     TextButton(onClick = { showPremiumDialog = false }) {
-                        Text("キャンセル")
+                        Text(stringResource(R.string.cancel))
                     }
                     TextButton(
                         onClick = {
@@ -461,7 +475,7 @@ fun AppSettingsScreen(
                             showPremiumDialog = false
                         }
                     ) {
-                        Text("課金して永久解除")
+                        Text(stringResource(R.string.purchase_unlock))
                     }
                 }
             }

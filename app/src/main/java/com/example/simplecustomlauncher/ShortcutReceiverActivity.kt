@@ -10,6 +10,7 @@ import com.example.simplecustomlauncher.data.ShortcutItem
 import com.example.simplecustomlauncher.data.ShortcutRepository
 import com.example.simplecustomlauncher.data.ShortcutType
 import java.util.UUID
+import com.example.simplecustomlauncher.R
 
 /**
  * 外部アプリからの「ホーム画面に追加」リクエストを受け取るActivity
@@ -63,7 +64,7 @@ class ShortcutReceiverActivity : Activity() {
                     val item = ShortcutItem(
                         id = UUID.randomUUID().toString(),
                         type = ShortcutType.INTENT,
-                        label = shortcutInfo.shortLabel?.toString() ?: "ショートカット",
+                        label = shortcutInfo.shortLabel?.toString() ?: getString(R.string.shortcut),
                         packageName = shortcutInfo.`package`,
                         intentUri = null, // ShortcutInfoから直接Intentは取れないので、IDで起動する
                         iconUri = null
@@ -74,9 +75,9 @@ class ShortcutReceiverActivity : Activity() {
 
                     if (repository.addShortcutToFirstEmpty(item)) {
                         request.accept()
-                        Toast.makeText(this, "「${item.label}」を追加しました", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, getString(R.string.item_added, item.label), Toast.LENGTH_SHORT).show()
                     } else {
-                        Toast.makeText(this, "空きスロットがありません", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, getString(R.string.no_empty_slot), Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -92,7 +93,7 @@ class ShortcutReceiverActivity : Activity() {
      * 古い形式のショートカットを処理
      */
     private fun handleInstallShortcut() {
-        val name = intent.getStringExtra(Intent.EXTRA_SHORTCUT_NAME) ?: "ショートカット"
+        val name = intent.getStringExtra(Intent.EXTRA_SHORTCUT_NAME) ?: getString(R.string.shortcut)
         val shortcutIntent = intent.getParcelableExtra<Intent>(Intent.EXTRA_SHORTCUT_INTENT)
 
         Log.d(TAG, "Install shortcut: $name")
@@ -107,9 +108,9 @@ class ShortcutReceiverActivity : Activity() {
             )
 
             if (repository.addShortcutToFirstEmpty(item)) {
-                Toast.makeText(this, "「$name」を追加しました", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.name_added, name), Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "空きスロットがありません", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.no_empty_slot), Toast.LENGTH_SHORT).show()
             }
         }
 

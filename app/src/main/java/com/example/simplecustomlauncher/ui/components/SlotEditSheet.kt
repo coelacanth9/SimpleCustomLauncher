@@ -10,9 +10,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.simplecustomlauncher.R
 import com.example.simplecustomlauncher.data.ShortcutItem
 import com.example.simplecustomlauncher.data.ShortcutType
 
@@ -54,7 +56,7 @@ fun SlotEditSheet(
                 .padding(16.dp)
         ) {
             Text(
-                text = "このスロットに配置",
+                text = stringResource(R.string.place_in_slot),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -66,7 +68,7 @@ fun SlotEditSheet(
                 // 1. アプリ一覧から選ぶ（一番上）
                 item {
                     NavigationButton(
-                        text = "アプリ一覧から選ぶ",
+                        text = stringResource(R.string.select_from_app_list),
                         icon = "📱",
                         onClick = onAddNew
                     )
@@ -75,12 +77,12 @@ fun SlotEditSheet(
                 // 2. 未配置のショートカット
                 if (unplacedShortcuts.isNotEmpty()) {
                     item {
-                        SectionHeader(text = "未配置ショートカット")
+                        SectionHeader(text = stringResource(R.string.unplaced_shortcuts))
                     }
                     items(unplacedShortcuts) { shortcut ->
                         ShortcutListItem(
                             shortcut = shortcut,
-                            subtitle = "タップで配置",
+                            subtitle = stringResource(R.string.tap_to_place),
                             backgroundColor = MaterialTheme.colorScheme.surface,
                             onClick = { onSelectShortcut(shortcut) }
                         )
@@ -90,12 +92,12 @@ fun SlotEditSheet(
                 // 3. 配置済みと入れ替え
                 if (otherPlacedShortcuts.isNotEmpty()) {
                     item {
-                        SectionHeader(text = "配置済みと入れ替え")
+                        SectionHeader(text = stringResource(R.string.swap_with_placed))
                     }
                     items(otherPlacedShortcuts) { shortcut ->
                         ShortcutListItem(
                             shortcut = shortcut,
-                            subtitle = "タップで入れ替え",
+                            subtitle = stringResource(R.string.tap_to_swap),
                             backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
                             contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                             onClick = { onSelectShortcut(shortcut) }
@@ -111,7 +113,7 @@ fun SlotEditSheet(
                     }
                     item {
                         ActionButton(
-                            text = "このスロットを空にする",
+                            text = stringResource(R.string.clear_slot),
                             color = MaterialTheme.colorScheme.error,
                             onClick = onClear
                         )

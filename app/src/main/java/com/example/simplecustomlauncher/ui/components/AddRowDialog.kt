@@ -8,10 +8,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.simplecustomlauncher.R
 
 /**
  * 行追加時の分割数選択ダイアログ
@@ -25,7 +27,7 @@ fun AddRowDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "行を追加",
+                text = stringResource(R.string.add_row_title),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -36,7 +38,7 @@ fun AddRowDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "分割数を選んでください",
+                    text = stringResource(R.string.select_column_count),
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -44,21 +46,21 @@ fun AddRowDialog(
                 // 1分割
                 ColumnOptionCard(
                     columns = 1,
-                    description = "横長ボタン1つ（文字大きめ）",
+                    description = stringResource(R.string.column_1_desc),
                     onClick = { onAddRow(1) }
                 )
 
                 // 2分割
                 ColumnOptionCard(
                     columns = 2,
-                    description = "ボタン2つ横並び",
+                    description = stringResource(R.string.column_2_desc),
                     onClick = { onAddRow(2) }
                 )
 
                 // 3分割
                 ColumnOptionCard(
                     columns = 3,
-                    description = "ボタン3つ横並び（アイコンのみ）",
+                    description = stringResource(R.string.column_3_desc),
                     onClick = { onAddRow(3) }
                 )
             }
@@ -66,7 +68,7 @@ fun AddRowDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("キャンセル")
+                Text(stringResource(R.string.cancel))
             }
         }
     )
@@ -115,7 +117,7 @@ private fun ColumnOptionCard(
 
             Column {
                 Text(
-                    text = "${columns}分割",
+                    text = stringResource(R.string.column_count_format, columns),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )

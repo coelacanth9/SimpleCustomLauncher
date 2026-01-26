@@ -26,6 +26,8 @@ import com.example.simplecustomlauncher.data.MemoRepository
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.res.stringResource
+import com.example.simplecustomlauncher.R
 
 /**
  * メモ帳画面
@@ -53,19 +55,19 @@ fun MemoScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "メモ帳",
+                        text = stringResource(R.string.memo),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "戻る")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { showSettings = true }) {
-                        Icon(Icons.Default.Settings, contentDescription = "設定")
+                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings))
                     }
                 }
             )
@@ -88,7 +90,7 @@ fun MemoScreen(
                     onValueChange = { newMemoText = it },
                     modifier = Modifier.weight(1f)
                                         .focusRequester(focusRequester),
-                    placeholder = { Text("新しいメモを入力", fontSize = fontSize.sp) },
+                    placeholder = { Text(stringResource(R.string.new_memo_hint), fontSize = fontSize.sp) },
 
                     textStyle = LocalTextStyle.current.copy(fontSize = fontSize.sp),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -118,7 +120,7 @@ fun MemoScreen(
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.height(56.dp)
                 ) {
-                    Text("登録", fontSize = 16.sp)
+                    Text(stringResource(R.string.register), fontSize = 16.sp)
                 }
             }
 
@@ -131,7 +133,7 @@ fun MemoScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "メモがありません\n上の入力欄から追加してください",
+                        text = stringResource(R.string.no_memo),
                         fontSize = fontSize.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = (fontSize * 1.5).sp
@@ -233,7 +235,7 @@ private fun MemoItemCard(
                 IconButton(onClick = { showMenu = true }) {
                     Icon(
                         Icons.Default.MoreVert,
-                        contentDescription = "メニュー",
+                        contentDescription = stringResource(R.string.app_menu),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -242,7 +244,7 @@ private fun MemoItemCard(
                     onDismissRequest = { showMenu = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("編集", fontSize = 16.sp) },
+                        text = { Text(stringResource(R.string.edit), fontSize = 16.sp) },
                         onClick = {
                             showMenu = false
                             onEdit()
@@ -250,7 +252,7 @@ private fun MemoItemCard(
                         leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                     )
                     DropdownMenuItem(
-                        text = { Text("削除", fontSize = 16.sp, color = MaterialTheme.colorScheme.error) },
+                        text = { Text(stringResource(R.string.delete), fontSize = 16.sp, color = MaterialTheme.colorScheme.error) },
                         onClick = {
                             showMenu = false
                             onDelete()
@@ -275,7 +277,7 @@ private fun FontSizeSettingsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("文字サイズ設定", fontWeight = FontWeight.Bold) },
+        title = { Text(stringResource(R.string.font_size_settings), fontWeight = FontWeight.Bold) },
         text = {
             Column {
                 sizeOptions.forEach { size ->
@@ -293,11 +295,11 @@ private fun FontSizeSettingsDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = when (size) {
-                                16 -> "小 (16)"
-                                20 -> "標準 (20)"
-                                24 -> "大 (24)"
-                                28 -> "特大 (28)"
-                                32 -> "最大 (32)"
+                                16 -> stringResource(R.string.font_size_small)
+                                20 -> stringResource(R.string.font_size_standard)
+                                24 -> stringResource(R.string.font_size_large)
+                                28 -> stringResource(R.string.font_size_xlarge)
+                                32 -> stringResource(R.string.font_size_max)
                                 else -> "$size"
                             },
                             fontSize = size.sp
@@ -308,7 +310,7 @@ private fun FontSizeSettingsDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("閉じる")
+                Text(stringResource(R.string.close))
             }
         }
     )
@@ -325,7 +327,7 @@ private fun EditMemoDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("メモを編集", fontWeight = FontWeight.Bold) },
+        title = { Text(stringResource(R.string.edit_memo), fontWeight = FontWeight.Bold) },
         text = {
             OutlinedTextField(
                 value = text,
@@ -343,12 +345,12 @@ private fun EditMemoDialog(
                     }
                 }
             ) {
-                Text("保存")
+                Text(stringResource(R.string.save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("キャンセル")
+                Text(stringResource(R.string.cancel))
             }
         }
     )

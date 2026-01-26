@@ -16,9 +16,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.simplecustomlauncher.CalendarRepository
+import com.example.simplecustomlauncher.R
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -47,14 +49,14 @@ fun CalendarFullScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "カレンダー",
+                        text = stringResource(R.string.calendar),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "戻る")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -75,19 +77,19 @@ fun CalendarFullScreen(
                 IconButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) {
                     Icon(
                         Icons.Default.KeyboardArrowLeft,
-                        contentDescription = "前の月",
+                        contentDescription = stringResource(R.string.prev_month),
                         modifier = Modifier.size(32.dp)
                     )
                 }
                 Text(
-                    text = "${currentMonth.year}年${currentMonth.monthValue}月",
+                    text = stringResource(R.string.year_month_format, currentMonth.year, currentMonth.monthValue),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
                 )
                 IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
                     Icon(
                         Icons.Default.KeyboardArrowRight,
-                        contentDescription = "次の月",
+                        contentDescription = stringResource(R.string.next_month),
                         modifier = Modifier.size(32.dp)
                     )
                 }
@@ -97,7 +99,15 @@ fun CalendarFullScreen(
 
             // 曜日ヘッダー
             Row(modifier = Modifier.fillMaxWidth()) {
-                val weekDays = listOf("日", "月", "火", "水", "木", "金", "土")
+                val weekDays = listOf(
+                    stringResource(R.string.day_sun),
+                    stringResource(R.string.day_mon),
+                    stringResource(R.string.day_tue),
+                    stringResource(R.string.day_wed),
+                    stringResource(R.string.day_thu),
+                    stringResource(R.string.day_fri),
+                    stringResource(R.string.day_sat)
+                )
                 weekDays.forEachIndexed { index, day ->
                     Text(
                         text = day,

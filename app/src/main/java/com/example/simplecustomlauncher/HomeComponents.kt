@@ -23,6 +23,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import com.example.simplecustomlauncher.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,7 +57,8 @@ fun HomeHeader(
 
     // 表示用のフォーマット作成
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-    val dateFormatter = DateTimeFormatter.ofPattern("yyyy年M月d日(E)", Locale.JAPANESE)
+    val datePattern = stringResource(R.string.date_format)
+    val dateFormatter = DateTimeFormatter.ofPattern(datePattern, Locale.getDefault())
     // 今日の祝日名を取得
     val holidayName = remember(currentDateTime.toLocalDate()) {
         repository.getHolidayName(currentDateTime.toLocalDate())
@@ -74,7 +77,7 @@ fun HomeHeader(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "アプリ設定",
+                text = stringResource(R.string.app_settings),
                 fontSize = 14.sp,
                 color = if (isEditMode) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
@@ -84,7 +87,7 @@ fun HomeHeader(
                     .padding(8.dp)
             )
             Text(
-                text = "スマホ設定",
+                text = stringResource(R.string.phone_settings),
                 fontSize = 14.sp,
                 color = if (isEditMode) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
@@ -144,7 +147,7 @@ fun HomeHeader(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = "編集完了",
+                        text = stringResource(R.string.edit_complete),
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSecondary,
@@ -159,7 +162,7 @@ fun HomeHeader(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = "＋行追加",
+                        text = stringResource(R.string.add_row),
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onTertiary,

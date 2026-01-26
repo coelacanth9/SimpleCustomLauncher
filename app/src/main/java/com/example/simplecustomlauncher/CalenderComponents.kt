@@ -12,6 +12,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import com.example.simplecustomlauncher.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -132,18 +134,26 @@ fun CalendarDayCell(day: Int, isToday: Boolean, holidayName: String?, dayOfWeek:
 
 @Composable
 fun CalendarHeader() {
-    val days = listOf("日", "月", "火", "水", "木", "金", "土")
+    val dayResIds = listOf(
+        R.string.day_sun,
+        R.string.day_mon,
+        R.string.day_tue,
+        R.string.day_wed,
+        R.string.day_thu,
+        R.string.day_fri,
+        R.string.day_sat
+    )
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        days.forEach { day ->
+        dayResIds.forEachIndexed { index, resId ->
             Text(
-                text = day,
+                text = stringResource(resId),
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = when (day) {
-                    "日" -> Color.Red
-                    "土" -> Color.Blue
+                color = when (index) {
+                    0 -> Color.Red    // Sunday
+                    6 -> Color.Blue   // Saturday
                     else -> Color.Gray
                 }
             )

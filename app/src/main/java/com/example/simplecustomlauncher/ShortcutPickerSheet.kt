@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -70,7 +71,7 @@ fun ShortcutPickerSheet(
             when (currentScreen) {
                 is PickerScreen.AppList -> {
                     Text(
-                        text = "アプリを選択",
+                        text = stringResource(R.string.select_app),
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(bottom = 8.dp)
@@ -83,14 +84,14 @@ fun ShortcutPickerSheet(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 12.dp),
-                        placeholder = { Text("アプリ名で検索") },
+                        placeholder = { Text(stringResource(R.string.search_app_name)) },
                         leadingIcon = {
-                            Icon(Icons.Default.Search, contentDescription = "検索")
+                            Icon(Icons.Default.Search, contentDescription = stringResource(R.string.search))
                         },
                         trailingIcon = {
                             if (searchQuery.isNotEmpty()) {
                                 IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Default.Clear, contentDescription = "クリア")
+                                    Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.clear))
                                 }
                             }
                         },
@@ -127,7 +128,7 @@ fun ShortcutPickerSheet(
                         modifier = Modifier.padding(bottom = 16.dp)
                     ) {
                         IconButton(onClick = { currentScreen = PickerScreen.AppList }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "戻る")
+                            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                         }
                         Text(
                             text = selectedApp?.label ?: "",
@@ -157,7 +158,7 @@ fun ShortcutPickerSheet(
                                         Spacer(Modifier.width(16.dp))
                                         Column {
                                             Text(
-                                                text = "アプリを起動",
+                                                text = stringResource(R.string.launch_app),
                                                 fontSize = 18.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
@@ -176,7 +177,7 @@ fun ShortcutPickerSheet(
                         if (shortcuts.isEmpty()) {
                             item {
                                 Text(
-                                    text = "このアプリにはショートカットがありません",
+                                    text = stringResource(R.string.no_shortcuts_for_app),
                                     modifier = Modifier.padding(16.dp),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -184,7 +185,7 @@ fun ShortcutPickerSheet(
                         } else {
                             item {
                                 Text(
-                                    text = "ショートカット (${shortcuts.size}件)",
+                                    text = stringResource(R.string.shortcut_count, shortcuts.size),
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Medium,
                                     modifier = Modifier.padding(vertical = 8.dp)

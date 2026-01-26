@@ -54,11 +54,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import com.example.simplecustomlauncher.R
+import com.example.simplecustomlauncher.ErrorMessage
 import com.example.simplecustomlauncher.HomeHeader
 import com.example.simplecustomlauncher.MainScreenState
 import com.example.simplecustomlauncher.MainViewModel
@@ -79,6 +81,35 @@ import com.example.simplecustomlauncher.ui.components.ShortcutConfirmDialog
 import com.example.simplecustomlauncher.ui.theme.AppTheme
 
 /**
+ * 内部機能のラベルをローカライズして取得
+ * アプリの場合はPackageManagerから現在のロケールでラベルを取得
+ */
+@Composable
+fun getLocalizedLabel(item: ShortcutItem): String {
+    val context = LocalContext.current
+    return when (item.type) {
+        ShortcutType.CALENDAR -> stringResource(R.string.shortcut_type_calendar)
+        ShortcutType.MEMO -> stringResource(R.string.shortcut_type_memo)
+        ShortcutType.SETTINGS -> stringResource(R.string.settings)
+        ShortcutType.DIALER -> stringResource(R.string.shortcut_type_phone)
+        ShortcutType.ALL_APPS -> stringResource(R.string.shortcut_type_all_apps)
+        ShortcutType.APP -> {
+            // パッケージ名から現在のロケールでアプリ名を取得
+            item.packageName?.let { pkg ->
+                try {
+                    val pm = context.packageManager
+                    val appInfo = pm.getApplicationInfo(pkg, 0)
+                    pm.getApplicationLabel(appInfo).toString()
+                } catch (e: Exception) {
+                    item.label
+                }
+            } ?: item.label
+        }
+        else -> item.label
+    }
+}
+
+/**
  * ホーム画面
  */
 @Composable
@@ -92,7 +123,7 @@ fun HomeScreen(
     // エラー表示
     LaunchedEffect(viewModel.errorEvent) {
         viewModel.errorEvent?.let { error ->
-            snackbarHostState.showSnackbar(error.message)
+            snackbarHostState.showSnackbar(error.errorMessage.toDisplayString(context))
             viewModel.clearError()
         }
     }
@@ -130,7 +161,7 @@ fun HomeScreen(
     // ショートカット実行確認ダイアログ
     viewModel.shortcutToConfirm?.let { item ->
         ShortcutConfirmDialog(
-            label = item.label,
+            label = getLocalizedLabel(item),
             onConfirm = {
                 viewModel.launchShortcut(context, item, shortcutHelper)
                 viewModel.dismissShortcutConfirmDialog()
@@ -486,7 +517,7 @@ private fun ShortcutButton(
                             horizontalAlignment = Alignment.Start
                         ) {
                             Text(
-                                text = item.label,
+                                text = getLocalizedLabel(item),
                                 color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = labelSize,
                                 fontWeight = FontWeight.Bold,
@@ -495,7 +526,7 @@ private fun ShortcutButton(
                             )
                             if (isEditMode) {
                                 Text(
-                                    text = "タップで編集",
+                                    text = stringResource(R.string.tap_to_edit),
                                     color = MaterialTheme.colorScheme.secondary,
                                     fontSize = (buttonHeight.value * 0.12f).sp
                                 )
@@ -516,7 +547,7 @@ private fun ShortcutButton(
                         ShortcutIcon(item = item, appIcon = appIcon, size = iconSize)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = item.label,
+                            text = getLocalizedLabel(item),
                             color = MaterialTheme.colorScheme.onSurface,
                             fontSize = labelSize,
                             fontWeight = FontWeight.Medium,
@@ -526,7 +557,7 @@ private fun ShortcutButton(
                         )
                         if (isEditMode) {
                             Text(
-                                text = "編集",
+                                text = stringResource(R.string.tap_to_edit),
                                 color = MaterialTheme.colorScheme.secondary,
                                 fontSize = (buttonHeight.value * 0.10f).sp
                             )
@@ -545,7 +576,7 @@ private fun ShortcutButton(
                         ShortcutIcon(item = item, appIcon = appIcon, size = iconSize)
                         if (isEditMode) {
                             Text(
-                                text = "編集",
+                                text = stringResource(R.string.tap_to_edit),
                                 color = MaterialTheme.colorScheme.secondary,
                                 fontSize = (buttonHeight.value * 0.10f).sp
                             )
@@ -585,13 +616,13 @@ private fun ShortcutIcon(
             }
         }
         ShortcutType.CALENDAR -> {
-            Icon(Icons.Default.DateRange, "カレンダー", Modifier.size(size), MaterialTheme.colorScheme.tertiary)
+            Icon(Icons.Default.DateRange, stringResource(R.string.shortcut_type_calendar), Modifier.size(size), MaterialTheme.colorScheme.tertiary)
         }
         ShortcutType.MEMO -> {
-            Icon(Icons.Default.Edit, "メモ帳", Modifier.size(size), MaterialTheme.colorScheme.secondary)
+            Icon(Icons.Default.Edit, stringResource(R.string.shortcut_type_memo), Modifier.size(size), MaterialTheme.colorScheme.secondary)
         }
         ShortcutType.SETTINGS -> {
-            Icon(Icons.Default.Settings, "設定", Modifier.size(size), MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(Icons.Default.Settings, stringResource(R.string.settings), Modifier.size(size), MaterialTheme.colorScheme.onSurfaceVariant)
         }
         ShortcutType.PHONE -> {
             // 電話アプリのアイコンを取得
@@ -643,7 +674,7 @@ private fun ShortcutIcon(
             }
         }
         ShortcutType.ALL_APPS -> {
-            Icon(Icons.Default.Apps, "すべてのアプリ", Modifier.size(size), MaterialTheme.colorScheme.primary)
+            Icon(Icons.Default.Apps, stringResource(R.string.shortcut_type_all_apps), Modifier.size(size), MaterialTheme.colorScheme.primary)
         }
         ShortcutType.EMPTY -> { }
     }
@@ -690,7 +721,7 @@ private fun EmptySlotButton(
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
-                contentDescription = "追加",
+                contentDescription = stringResource(R.string.add),
                 modifier = Modifier.size(36.dp),
                 tint = MaterialTheme.colorScheme.outline
             )

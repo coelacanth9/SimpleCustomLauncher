@@ -42,10 +42,39 @@ sealed class MainScreenState {
 }
 
 /**
+ * エラーメッセージの種類（文字列リソースIDベース）
+ */
+sealed class ErrorMessage {
+    /** 空きスロットがありません */
+    object NoEmptySlot : ErrorMessage()
+    /** 起動できませんでした */
+    object LaunchFailed : ErrorMessage()
+    /** 起動できませんでした: {詳細} */
+    data class LaunchFailedWithError(val errorDetail: String) : ErrorMessage()
+    /** ショートカット情報が見つかりません */
+    object ShortcutInfoNotFound : ErrorMessage()
+    /** これ以上行を追加できません */
+    object CannotAddMoreRows : ErrorMessage()
+
+    /**
+     * Contextを使って文字列に変換
+     */
+    fun toDisplayString(context: Context): String {
+        return when (this) {
+            is NoEmptySlot -> context.getString(R.string.no_empty_slot)
+            is LaunchFailed -> context.getString(R.string.launch_failed)
+            is LaunchFailedWithError -> context.getString(R.string.launch_failed_with_error, errorDetail)
+            is ShortcutInfoNotFound -> context.getString(R.string.shortcut_info_not_found)
+            is CannotAddMoreRows -> context.getString(R.string.cannot_add_more_rows)
+        }
+    }
+}
+
+/**
  * エラーイベント
  */
 data class ErrorEvent(
-    val message: String,
+    val errorMessage: ErrorMessage,
     val id: Long = System.currentTimeMillis()
 )
 
@@ -285,7 +314,7 @@ class MainViewModel(
                 }
             } else {
                 // 5ページ全て満杯 → 何もできない
-                showError("これ以上行を追加できません")
+                showError(ErrorMessage.CannotAddMoreRows)
             }
             showAddRowDialog = false
             return
@@ -612,7 +641,7 @@ class MainViewModel(
             }
         } catch (e: Exception) {
             Log.e("MainViewModel", "Failed to launch shortcut", e)
-            showError("起動できませんでした")
+            showError(ErrorMessage.LaunchFailed)
         }
     }
 
@@ -628,18 +657,18 @@ class MainViewModel(
                 launcherApps.startShortcut(packageName, shortcutId, null, null, Process.myUserHandle())
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Failed to launch pin shortcut: ${e.message}", e)
-                showError("起動できませんでした: ${e.message}")
+                showError(ErrorMessage.LaunchFailedWithError(e.message ?: ""))
             }
         } else {
             Log.e("MainViewModel", "Shortcut info not found for item: ${item.id}, label: ${item.label}")
-            showError("ショートカット情報が見つかりません")
+            showError(ErrorMessage.ShortcutInfoNotFound)
         }
     }
 
     // === エラー処理 ===
 
-    fun showError(message: String) {
-        errorEvent = ErrorEvent(message)
+    fun showError(errorMessage: ErrorMessage) {
+        errorEvent = ErrorEvent(errorMessage)
     }
 
     fun clearError() {

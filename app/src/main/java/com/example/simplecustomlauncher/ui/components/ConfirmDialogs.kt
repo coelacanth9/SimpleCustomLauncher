@@ -7,12 +7,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.simplecustomlauncher.R
 
 /**
  * ショートカット実行の確認ダイアログ
@@ -42,18 +44,10 @@ fun ShortcutConfirmDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = label,
+                    text = stringResource(R.string.confirm_open_app, label),
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "を開きますか？",
-                    fontSize = 20.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -74,7 +68,7 @@ fun ShortcutConfirmDialog(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = "いいえ",
+                            text = stringResource(R.string.no),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -93,7 +87,7 @@ fun ShortcutConfirmDialog(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = "はい",
+                            text = stringResource(R.string.yes),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimary
@@ -132,7 +126,7 @@ fun EditModeConfirmDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "編集モード",
+                    text = stringResource(R.string.edit_mode),
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -140,7 +134,7 @@ fun EditModeConfirmDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "ショートカットの配置を\n変更しますか？",
+                    text = stringResource(R.string.confirm_change_layout),
                     fontSize = 18.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -163,7 +157,7 @@ fun EditModeConfirmDialog(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = "いいえ",
+                            text = stringResource(R.string.no),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -181,7 +175,7 @@ fun EditModeConfirmDialog(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = "はい",
+                            text = stringResource(R.string.yes),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSecondary
@@ -220,7 +214,7 @@ fun AddPageConfirmDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "ページを追加",
+                    text = stringResource(R.string.add_page),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -228,7 +222,7 @@ fun AddPageConfirmDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "このページは行数の上限に\n達しています。\n新しいページを追加しますか？",
+                    text = stringResource(R.string.page_limit_reached),
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -251,7 +245,7 @@ fun AddPageConfirmDialog(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = "いいえ",
+                            text = stringResource(R.string.no),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -269,7 +263,7 @@ fun AddPageConfirmDialog(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = "追加する",
+                            text = stringResource(R.string.yes),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimary
@@ -309,7 +303,7 @@ fun PremiumRequiredForPageDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "プレミアム機能",
+                    text = stringResource(R.string.premium_feature),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -317,7 +311,7 @@ fun PremiumRequiredForPageDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "ページの追加はプレミアム機能です。\n動画視聴または課金で\nご利用いただけます。",
+                    text = stringResource(R.string.premium_add_page_prompt),
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -337,7 +331,7 @@ fun PremiumRequiredForPageDialog(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = "動画を見て24時間解除",
+                        text = stringResource(R.string.watch_ad_unlock),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimary
@@ -358,7 +352,7 @@ fun PremiumRequiredForPageDialog(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = "課金して永久解除",
+                        text = stringResource(R.string.purchase_unlock),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onTertiary
@@ -373,7 +367,7 @@ fun PremiumRequiredForPageDialog(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "キャンセル",
+                        text = stringResource(R.string.cancel),
                         fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

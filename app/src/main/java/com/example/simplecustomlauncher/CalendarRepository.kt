@@ -59,9 +59,9 @@ class CalendarRepository(private val context: Context) {
         val holidayMap = mutableMapOf<Int, String>()
 
         val startLocalDate = LocalDate.of(year, month, 1)
-        val endLocalDate = startLocalDate.plusMonths(1)
+        val endLocalDate = startLocalDate.withDayOfMonth(startLocalDate.lengthOfMonth()) // 月末日
         val startMillis = startLocalDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        val endMillis = endLocalDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val endMillis = endLocalDate.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
         val projection = arrayOf(
             CalendarContract.Instances.BEGIN,
@@ -105,7 +105,9 @@ class CalendarRepository(private val context: Context) {
                             holidayTranslations.containsKey(title)  // 英語でも日本の祝日名ならOK
 
                     // 日本の祝日カレンダーのイベント、または日本の祝日名を含むイベントのみ表示
-                    if (isJapaneseHolidayCalendar || isJapaneseHolidayTitle) {
+                    // かつ、指定された年月のイベントのみ（境界の問題を回避）
+                    if ((isJapaneseHolidayCalendar || isJapaneseHolidayTitle) &&
+                        date.year == year && date.monthValue == month) {
                         // 英語の祝日名を日本語に変換
                         holidayMap[date.dayOfMonth] = translateHolidayName(title)
                     }

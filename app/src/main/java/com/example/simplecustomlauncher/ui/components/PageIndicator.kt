@@ -20,7 +20,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.simplecustomlauncher.R
 
 /**
  * ページインジケーター
@@ -91,7 +93,7 @@ private fun PageDot(
         if (isLocked && !isSelected) {
             Icon(
                 imageVector = Icons.Default.Lock,
-                contentDescription = "ロック",
+                contentDescription = stringResource(R.string.lock),
                 modifier = Modifier
                     .size(10.dp)
                     .offset(x = 6.dp, y = (-4).dp),

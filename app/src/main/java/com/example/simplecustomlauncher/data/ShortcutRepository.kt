@@ -263,6 +263,7 @@ class ShortcutRepository(private val context: Context) {
      * APPタイプの場合、インストールされているパッケージを探す
      */
     private fun createShortcutFromDef(def: ItemDef): ShortcutItem? {
+        val label = context.getString(def.labelResId)
         return when (def.type) {
             ShortcutType.APP -> {
                 // インストールされているパッケージを探す
@@ -273,7 +274,7 @@ class ShortcutRepository(private val context: Context) {
                     ShortcutItem(
                         id = UUID.randomUUID().toString(),
                         type = ShortcutType.APP,
-                        label = def.label,
+                        label = label,
                         packageName = installedPackage
                     )
                 } else {
@@ -285,7 +286,7 @@ class ShortcutRepository(private val context: Context) {
                 ShortcutItem(
                     id = UUID.randomUUID().toString(),
                     type = def.type,
-                    label = def.label
+                    label = label
                 )
             }
         }

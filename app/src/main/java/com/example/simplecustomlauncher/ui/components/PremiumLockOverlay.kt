@@ -20,6 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import com.example.simplecustomlauncher.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -48,7 +50,7 @@ fun PremiumLockOverlay(
         ) {
             Icon(
                 imageVector = Icons.Default.Lock,
-                contentDescription = "ロック",
+                contentDescription = stringResource(R.string.lock),
                 modifier = Modifier.size(64.dp),
                 tint = Color.White
             )
@@ -56,7 +58,7 @@ fun PremiumLockOverlay(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "このページはプレミアム機能です",
+                text = stringResource(R.string.premium_page_locked),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White,
@@ -66,7 +68,7 @@ fun PremiumLockOverlay(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "動画を見るか課金して\nすべてのページを解除できます",
+                text = stringResource(R.string.premium_unlock_prompt),
                 fontSize = 14.sp,
                 color = Color.White.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center
@@ -78,7 +80,7 @@ fun PremiumLockOverlay(
                 onClick = onWatchAd,
                 modifier = Modifier.padding(horizontal = 16.dp)
             ) {
-                Text("動画を見て24時間解除")
+                Text(stringResource(R.string.watch_ad_unlock))
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -88,7 +90,7 @@ fun PremiumLockOverlay(
                 modifier = Modifier.padding(horizontal = 16.dp)
             ) {
                 Text(
-                    text = "課金して永久解除",
+                    text = stringResource(R.string.purchase_unlock),
                     color = Color.White
                 )
             }

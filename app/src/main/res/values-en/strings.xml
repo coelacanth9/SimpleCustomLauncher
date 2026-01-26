@@ -1,0 +1,188 @@
+<resources>
+    <string name="app_name">SimpleCustomLauncher</string>
+    <string name="title_activity_main">MainActivity</string>
+
+    <!-- Common -->
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="cancel">Cancel</string>
+    <string name="close">Close</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="delete_action">Delete</string>
+    <string name="add">Add</string>
+    <string name="add_action">Add</string>
+    <string name="edit">Edit</string>
+    <string name="search">Search</string>
+    <string name="back">Back</string>
+    <string name="register">Register</string>
+    <string name="clear">Clear</string>
+    <string name="settings">Settings</string>
+
+    <!-- Days of week -->
+    <string name="day_sun">Sun</string>
+    <string name="day_mon">Mon</string>
+    <string name="day_tue">Tue</string>
+    <string name="day_wed">Wed</string>
+    <string name="day_thu">Thu</string>
+    <string name="day_fri">Fri</string>
+    <string name="day_sat">Sat</string>
+
+    <!-- Home Screen -->
+    <string name="add_row">+ Add Row</string>
+    <string name="edit_mode">Edit Mode</string>
+    <string name="edit_complete">Done</string>
+    <string name="tap_to_edit">Tap to edit</string>
+    <string name="tap_to_place">Tap to place</string>
+    <string name="tap_to_swap">Tap to swap</string>
+    <string name="no_empty_slot">No empty slot available</string>
+    <string name="launch_failed">Failed to launch</string>
+    <string name="launch_failed_with_error">Failed to launch: %s</string>
+    <string name="shortcut_info_not_found">Shortcut info not found</string>
+    <string name="confirm_open_app">Open %s?</string>
+
+    <!-- Shortcut Types -->
+    <string name="shortcut_type_calendar">Calendar</string>
+    <string name="shortcut_type_memo">Memo</string>
+    <string name="shortcut_type_phone">Phone</string>
+    <string name="shortcut_type_all_apps">All Apps</string>
+    <string name="shortcut_type_call">Make a call</string>
+    <string name="shortcut_type_sms">Send SMS</string>
+
+    <!-- Shortcut Add/Edit Screen -->
+    <string name="add_shortcut">Add Shortcut</string>
+    <string name="select_app">Select App</string>
+    <string name="app_list">App List</string>
+    <string name="select_from_app_list">Select from app list</string>
+    <string name="internal_features">Built-in Features</string>
+    <string name="search_app_name">Search by app name</string>
+    <string name="app_count">%d apps</string>
+    <string name="launch_app">Launch App</string>
+    <string name="no_shortcuts_for_app">No shortcuts available for this app</string>
+    <string name="shortcut">Shortcut</string>
+    <string name="shortcut_count">Shortcuts (%d)</string>
+    <string name="unplaced_shortcuts">Unplaced Shortcuts</string>
+    <string name="swap_with_placed">Swap with placed</string>
+    <string name="place_in_slot">Place in this slot</string>
+    <string name="clear_slot">Clear this slot</string>
+    <string name="item_added_to_storage">\"%s\" added to storage</string>
+    <string name="item_added">\"%s\" added</string>
+    <string name="name_added">\"%s\" added</string>
+
+    <!-- Row Settings -->
+    <string name="add_row_title">Add Row</string>
+    <string name="select_column_count">Select number of columns</string>
+    <string name="change_column_count">Change columns</string>
+    <string name="current_column_count">Change columns for this row (Current: %d)</string>
+    <string name="select_row_column_count">Select number of columns for this row</string>
+    <string name="column_count_format">%d columns</string>
+    <string name="column_1_desc">1 wide button (larger text)</string>
+    <string name="column_2_desc">2 buttons side by side</string>
+    <string name="column_3_desc">3 buttons (icons only)</string>
+    <string name="delete_row">Delete this row</string>
+    <string name="cannot_add_more_rows">Cannot add more rows</string>
+    <string name="column_reduce_warning">* Reducing columns will unplace overflowing shortcuts</string>
+
+    <!-- Page Settings -->
+    <string name="page_count_format">%d pages</string>
+    <string name="delete_page">Delete this page</string>
+    <string name="add_page">Add Page</string>
+    <string name="select_page_count">Select page count</string>
+    <string name="page_limit_reached">This page has reached the row limit.\nAdd a new page?</string>
+    <string name="home_page_count">Home screen pages</string>
+    <string name="page_loop">Page loop</string>
+    <string name="page_loop_desc">Navigate from last page to first</string>
+    <string name="multi_page_swipe">Swipe to switch pages</string>
+
+    <!-- Premium -->
+    <string name="premium_feature">Premium Feature</string>
+    <string name="premium_page_locked">This page is a premium feature</string>
+    <string name="premium_multi_page">Premium: Multiple pages</string>
+    <string name="premium_page_only">Multiple pages is premium only.</string>
+    <string name="premium_unlock_prompt">Watch an ad or purchase\nto unlock all pages</string>
+    <string name="premium_unlock_short">Watch an ad or purchase to unlock.</string>
+    <string name="premium_add_page_prompt">Adding pages is a premium feature.\nWatch an ad or purchase\nto unlock.</string>
+    <string name="watch_ad_unlock">Watch ad for 24h access</string>
+    <string name="purchase_unlock">Purchase for permanent access</string>
+    <string name="lock">Lock</string>
+
+    <!-- Contact -->
+    <string name="contact">Contacts</string>
+    <string name="add_from_contact">Add from contacts</string>
+    <string name="select_contact_type">Which shortcut would you like to create?</string>
+    <string name="tap_to_call">Tap to call directly</string>
+    <string name="tap_to_message">Tap to send message</string>
+
+    <!-- App Settings -->
+    <string name="app_settings">App Settings</string>
+    <string name="phone_settings">Phone Settings</string>
+    <string name="home_app_settings">Home App Settings</string>
+    <string name="set_as_default_home">Set as default home app</string>
+    <string name="layout_edit">Edit Layout</string>
+    <string name="edit_layout_desc">Change app arrangement</string>
+    <string name="reset_to_default">Reset to Default</string>
+    <string name="reset_to_default_short">Reset to default</string>
+    <string name="clear_layout">Clear Layout</string>
+    <string name="clear_layout_warning">All rows and shortcuts will be deleted. This cannot be undone. Continue?</string>
+    <string name="clear_layout_desc">All rows and placements will be deleted</string>
+    <string name="clear_confirm_message">All rows and shortcuts will be deleted. This cannot be undone. Continue?</string>
+    <string name="reset_layout_warning">Current layout will be cleared and reset to default. This cannot be undone. Continue?</string>
+    <string name="reset_layout_desc">Layout will be reset to default</string>
+    <string name="reset_confirm_message">Current layout will be cleared and reset to default. This cannot be undone. Continue?</string>
+    <string name="confirm_change_layout">Change shortcut arrangement?</string>
+    <string name="theme">Theme</string>
+    <string name="select_theme">Select Theme</string>
+    <string name="change_theme_desc">Change color scheme</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_system">Follow system</string>
+    <string name="tap_mode">Launch Action</string>
+    <string name="tap_mode_desc">Action to launch apps</string>
+    <string name="tap_mode_single">Tap</string>
+    <string name="tap_mode_long">Long press</string>
+    <string name="select_tap_mode">Select tap action</string>
+    <string name="confirm_before_launch">Confirm before launch</string>
+    <string name="confirm_before_launch_desc">Show confirmation dialog before launching</string>
+    <string name="haptic_feedback">Haptic feedback</string>
+    <string name="haptic_feedback_desc">Vibrate on tap</string>
+    <string name="font_size_settings">Font Size</string>
+    <string name="font_size_small">Small (16)</string>
+    <string name="font_size_standard">Standard (20)</string>
+    <string name="font_size_large">Large (24)</string>
+    <string name="font_size_xlarge">X-Large (28)</string>
+    <string name="font_size_max">Maximum (32)</string>
+    <string name="version">Version</string>
+
+    <!-- Calendar -->
+    <string name="calendar">Calendar</string>
+    <string name="prev_month">Previous month</string>
+    <string name="next_month">Next month</string>
+    <string name="year_month_format">%2$d/%1$d</string>
+    <string name="date_format">MMM d, yyyy (E)</string>
+    <string name="holiday">Holiday</string>
+    <string name="substitute_holiday">Substitute holiday</string>
+    <string name="substitute">Substitute</string>
+    <string name="holiday_suffix"> Day</string>
+    <string name="country_japan">Japan</string>
+
+    <!-- Memo -->
+    <string name="memo">Memo</string>
+    <string name="edit_memo">Edit Memo</string>
+    <string name="new_memo_hint">Enter new memo</string>
+    <string name="no_memo">No memos yet\nAdd one using the input field above</string>
+
+    <!-- Default Apps -->
+    <string name="app_camera">Camera</string>
+    <string name="app_photos">Photos</string>
+    <string name="app_maps">Maps</string>
+    <string name="app_messages">Messages</string>
+    <string name="app_menu">Menu</string>
+    <string name="app_google">Google</string>
+    <string name="app_line">LINE</string>
+    <string name="app_chrome">Chrome</string>
+    <string name="app_youtube">YouTube</string>
+    <string name="app_gmail">Gmail</string>
+
+    <!-- Error Messages -->
+    <string name="error_query">Query error</string>
+</resources>
