@@ -448,4 +448,12 @@ class MainViewModel(
         shortcutRepository.saveShortcut(item)
         return item
     }
+
+    private fun saveShortcutInfo(context: Context, itemId: String, shortcutId: String, packageName: String) {
+        val prefs = context.getSharedPreferences("pin_shortcuts", Context.MODE_PRIVATE)
+        prefs.edit()
+            .putString("${itemId}_shortcut_id", shortcutId)
+            .putString("${itemId}_package", packageName)
+            .apply()
+    }
 }

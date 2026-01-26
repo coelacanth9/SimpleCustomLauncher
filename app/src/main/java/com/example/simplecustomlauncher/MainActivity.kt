@@ -36,7 +36,7 @@ import com.example.simplecustomlauncher.ui.screens.ShortcutAddScreen
 import com.example.simplecustomlauncher.ui.screens.SlotEditScreen
 import java.time.LocalDate
 import java.util.UUID
-
+import android.content.pm.ActivityInfo
 class MainActivity : ComponentActivity() {
 
     private lateinit var shortcutRepository: ShortcutRepository
@@ -44,6 +44,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val isTablet = resources.configuration.smallestScreenWidthDp >= 600
+        if (!isTablet) {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        }
+
         shortcutRepository = ShortcutRepository(this)
         settingsRepository = SettingsRepository(this)
 

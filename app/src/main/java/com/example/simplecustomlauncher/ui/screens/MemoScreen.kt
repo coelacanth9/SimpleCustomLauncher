@@ -23,6 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.simplecustomlauncher.data.MemoItem
 import com.example.simplecustomlauncher.data.MemoRepository
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 
 /**
  * メモ帳画面
@@ -35,7 +38,10 @@ fun MemoScreen(
     val context = LocalContext.current
     val repository = remember { MemoRepository(context) }
     val focusManager = LocalFocusManager.current
-
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
     var memos by remember { mutableStateOf(repository.getMemos()) }
     var newMemoText by remember { mutableStateOf("") }
     var fontSize by remember { mutableIntStateOf(repository.getFontSize()) }
@@ -80,8 +86,10 @@ fun MemoScreen(
                 OutlinedTextField(
                     value = newMemoText,
                     onValueChange = { newMemoText = it },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f)
+                                        .focusRequester(focusRequester),
                     placeholder = { Text("新しいメモを入力", fontSize = fontSize.sp) },
+
                     textStyle = LocalTextStyle.current.copy(fontSize = fontSize.sp),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(
@@ -98,7 +106,7 @@ fun MemoScreen(
                     singleLine = true
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                FilledIconButton(
+                Button(
                     onClick = {
                         if (newMemoText.isNotBlank()) {
                             repository.addMemo(newMemoText.trim())
@@ -107,9 +115,10 @@ fun MemoScreen(
                             focusManager.clearFocus()
                         }
                     },
-                    modifier = Modifier.size(56.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.height(56.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "追加")
+                    Text("登録", fontSize = 16.sp)
                 }
             }
 

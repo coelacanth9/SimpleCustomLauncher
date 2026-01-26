@@ -1,6 +1,7 @@
 package com.example.simplecustomlauncher
 
 import android.content.Context
+import android.content.Intent
 import android.content.pm.LauncherApps
 import android.content.pm.ShortcutInfo
 import android.graphics.drawable.Drawable
@@ -107,8 +108,17 @@ class ShortcutHelper(private val context: Context) {
      */
     fun getAppIcon(packageName: String): Drawable? {
         return try {
-            val activityList = launcherApps.getActivityList(packageName, Process.myUserHandle())
-            activityList.firstOrNull()?.getBadgedIcon(0)
+            val pm = context.packageManager
+
+            // アプリケーションアイコン
+            val baseIcon = pm.getApplicationIcon(packageName)
+
+            // ユーザーバッジ付与
+            pm.getUserBadgedIcon(
+                baseIcon,
+                Process.myUserHandle()
+            )
+
         } catch (e: Exception) {
             Log.e("ShortcutHelper", "Failed to get icon for $packageName", e)
             null
@@ -120,15 +130,11 @@ class ShortcutHelper(private val context: Context) {
      */
     fun startApp(packageName: String) {
         try {
-            val activityList = launcherApps.getActivityList(packageName, Process.myUserHandle())
-            if (activityList.isNotEmpty()) {
-                launcherApps.startMainActivity(
-                    activityList[0].componentName,
-                    Process.myUserHandle(),
-                    null,
-                    null
-                )
-            }
+            val pm = context.packageManager
+            val intent = pm.getLaunchIntentForPackage(packageName) ?: return
+
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
         } catch (e: Exception) {
             Log.e("ShortcutHelper", "Failed to start app $packageName", e)
         }
