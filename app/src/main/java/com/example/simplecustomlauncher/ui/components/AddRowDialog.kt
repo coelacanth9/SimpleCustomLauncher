@@ -75,9 +75,10 @@ fun AddRowDialog(
 }
 
 @Composable
-private fun ColumnOptionCard(
+fun ColumnOptionCard(
     columns: Int,
     description: String,
+    isSelected: Boolean = false,
     onClick: () -> Unit
 ) {
     Card(
@@ -85,7 +86,11 @@ private fun ColumnOptionCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = if (isSelected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
         ),
         shape = RoundedCornerShape(12.dp)
     ) {

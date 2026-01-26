@@ -10,6 +10,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -35,6 +36,7 @@ import com.example.simplecustomlauncher.ShortcutHelper
 import com.example.simplecustomlauncher.data.ShortcutItem
 import com.example.simplecustomlauncher.data.ShortcutType
 import com.example.simplecustomlauncher.R
+import com.example.simplecustomlauncher.ui.components.ColumnOptionCard
 import com.example.simplecustomlauncher.ui.components.ContactTypeDialog
 
 /**
@@ -71,6 +73,64 @@ data class ContactInfo(
 )
 
 /**
+ * 連絡先ピッカーの状態
+ */
+data class ContactPickerState(
+    val selectedContact: ContactInfo?,
+    val showDialog: Boolean,
+    val startPicker: () -> Unit,
+    val dismissDialog: () -> Unit
+)
+
+/**
+ * 連絡先ピッカーのカスタムフック
+ */
+@Composable
+fun rememberContactPicker(
+    onContactSelected: (ContactInfo) -> Unit
+): ContactPickerState {
+    val context = LocalContext.current
+    var selectedContact by remember { mutableStateOf<ContactInfo?>(null) }
+    var showDialog by remember { mutableStateOf(false) }
+
+    val contactPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickContact()
+    ) { uri ->
+        uri?.let {
+            val contactInfo = getContactInfo(context, it)
+            if (contactInfo != null) {
+                selectedContact = contactInfo
+                showDialog = true
+            }
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            contactPickerLauncher.launch(null)
+        }
+    }
+
+    val startPicker: () -> Unit = {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS)
+            == PackageManager.PERMISSION_GRANTED) {
+            contactPickerLauncher.launch(null)
+        } else {
+            permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+        }
+    }
+
+    return ContactPickerState(
+        selectedContact = selectedContact,
+        showDialog = showDialog,
+        startPicker = startPicker,
+        dismissDialog = { showDialog = false }
+    )
+}
+
+/**
  * ショートカット追加画面（通常モードで＋タップ時）
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -90,42 +150,8 @@ fun ShortcutAddScreen(
     var screenState by remember { mutableStateOf<SelectScreenState>(SelectScreenState.Main) }
     var shortcuts by remember { mutableStateOf<List<ShortcutData>>(emptyList()) }
 
-    // 連絡先選択の状態
-    var selectedContact by remember { mutableStateOf<ContactInfo?>(null) }
-    var showContactTypeDialog by remember { mutableStateOf(false) }
-
-    // 連絡先ピッカー
-    val contactPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickContact()
-    ) { uri ->
-        uri?.let {
-            // 連絡先から名前と電話番号を取得
-            val contactInfo = getContactInfo(context, it)
-            if (contactInfo != null) {
-                selectedContact = contactInfo
-                showContactTypeDialog = true
-            }
-        }
-    }
-
-    // 権限リクエスト
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            contactPickerLauncher.launch(null)
-        }
-    }
-
-    // 連絡先選択を開始
-    val startContactPicker: () -> Unit = {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS)
-            == PackageManager.PERMISSION_GRANTED) {
-            contactPickerLauncher.launch(null)
-        } else {
-            permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
-        }
-    }
+    // 連絡先ピッカー（カスタムフック使用）
+    val contactPicker = rememberContactPicker { /* not used here */ }
 
     Scaffold(
         topBar = {
@@ -162,7 +188,7 @@ fun ShortcutAddScreen(
                     onSelectUnplaced = onSelectUnplaced,
                     onSelectInternal = onSelectInternal,
                     onGoToAppList = { screenState = SelectScreenState.AppList },
-                    onContactPicker = startContactPicker,
+                    onContactPicker = contactPicker.startPicker,
                     modifier = Modifier.padding(paddingValues)
                 )
             }
@@ -190,24 +216,21 @@ fun ShortcutAddScreen(
     }
 
     // 連絡先タイプ選択ダイアログ
-    if (showContactTypeDialog && selectedContact != null) {
-        ContactTypeDialog(
-            contactName = selectedContact!!.name,
-            onSelectPhone = {
-                onSelectContact(selectedContact!!.name, selectedContact!!.phoneNumber, ShortcutType.PHONE)
-                showContactTypeDialog = false
-                selectedContact = null
-            },
-            onSelectSms = {
-                onSelectContact(selectedContact!!.name, selectedContact!!.phoneNumber, ShortcutType.SMS)
-                showContactTypeDialog = false
-                selectedContact = null
-            },
-            onDismiss = {
-                showContactTypeDialog = false
-                selectedContact = null
-            }
-        )
+    if (contactPicker.showDialog) {
+        contactPicker.selectedContact?.let { contact ->
+            ContactTypeDialog(
+                contactName = contact.name,
+                onSelectPhone = {
+                    onSelectContact(contact.name, contact.phoneNumber, ShortcutType.PHONE)
+                    contactPicker.dismissDialog()
+                },
+                onSelectSms = {
+                    onSelectContact(contact.name, contact.phoneNumber, ShortcutType.SMS)
+                    contactPicker.dismissDialog()
+                },
+                onDismiss = { contactPicker.dismissDialog() }
+            )
+        }
     }
 }
 
@@ -236,42 +259,9 @@ fun SlotEditScreen(
     val context = LocalContext.current
     val helper = remember { ShortcutHelper(context) }
 
-    // 連絡先選択の状態
-    var selectedContact by remember { mutableStateOf<ContactInfo?>(null) }
-    var showContactTypeDialog by remember { mutableStateOf(false) }
+    // 連絡先ピッカー（カスタムフック使用）
+    val contactPicker = rememberContactPicker { /* not used here */ }
     var showColumnsDialog by remember { mutableStateOf(false) }
-
-    // 連絡先ピッカー
-    val contactPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickContact()
-    ) { uri ->
-        uri?.let {
-            val contactInfo = getContactInfo(context, it)
-            if (contactInfo != null) {
-                selectedContact = contactInfo
-                showContactTypeDialog = true
-            }
-        }
-    }
-
-    // 権限リクエスト
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            contactPickerLauncher.launch(null)
-        }
-    }
-
-    // 連絡先選択を開始
-    val startContactPicker: () -> Unit = {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS)
-            == PackageManager.PERMISSION_GRANTED) {
-            contactPickerLauncher.launch(null)
-        } else {
-            permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
-        }
-    }
 
     var screenState by remember { mutableStateOf<SelectScreenState>(SelectScreenState.Main) }
     var shortcuts by remember { mutableStateOf<List<ShortcutData>>(emptyList()) }
@@ -315,7 +305,7 @@ fun SlotEditScreen(
                     onSelectPlaced = onSelectPlaced,
                     onSelectInternal = onSelectInternal,
                     onGoToAppList = { screenState = SelectScreenState.AppList },
-                    onContactPicker = startContactPicker,
+                    onContactPicker = contactPicker.startPicker,
                     onClear = onClear,
                     onShowColumnsDialog = { showColumnsDialog = true },
                     onDeleteRow = onDeleteRow,
@@ -347,24 +337,21 @@ fun SlotEditScreen(
     }
 
     // 連絡先タイプ選択ダイアログ
-    if (showContactTypeDialog && selectedContact != null) {
-        ContactTypeDialog(
-            contactName = selectedContact!!.name,
-            onSelectPhone = {
-                onSelectContact(selectedContact!!.name, selectedContact!!.phoneNumber, ShortcutType.PHONE)
-                showContactTypeDialog = false
-                selectedContact = null
-            },
-            onSelectSms = {
-                onSelectContact(selectedContact!!.name, selectedContact!!.phoneNumber, ShortcutType.SMS)
-                showContactTypeDialog = false
-                selectedContact = null
-            },
-            onDismiss = {
-                showContactTypeDialog = false
-                selectedContact = null
-            }
-        )
+    if (contactPicker.showDialog) {
+        contactPicker.selectedContact?.let { contact ->
+            ContactTypeDialog(
+                contactName = contact.name,
+                onSelectPhone = {
+                    onSelectContact(contact.name, contact.phoneNumber, ShortcutType.PHONE)
+                    contactPicker.dismissDialog()
+                },
+                onSelectSms = {
+                    onSelectContact(contact.name, contact.phoneNumber, ShortcutType.SMS)
+                    contactPicker.dismissDialog()
+                },
+                onDismiss = { contactPicker.dismissDialog() }
+            )
+        }
     }
 
     // 分割数変更ダイアログ
@@ -390,7 +377,7 @@ fun SlotEditScreen(
                         R.string.column_3_desc
                     )
                     listOf(1, 2, 3).forEachIndexed { index, columns ->
-                        ColumnChangeOptionCard(
+                        ColumnOptionCard(
                             columns = columns,
                             description = stringResource(descriptions[index]),
                             isSelected = columns == currentColumns,
@@ -420,6 +407,61 @@ fun SlotEditScreen(
 
 // ============ 共通コンポーネント ============
 
+/**
+ * 共通のショートカット選択コンテンツ（LazyListScope拡張）
+ */
+private fun LazyListScope.commonSelectContent(
+    unplacedShortcuts: List<ShortcutItem>,
+    onSelectUnplaced: (ShortcutItem) -> Unit,
+    onSelectInternal: (InternalFeature) -> Unit,
+    onGoToAppList: () -> Unit,
+    onContactPicker: () -> Unit
+) {
+    // アプリ一覧へ
+    item {
+        NavigationCard(
+            icon = "📱",
+            text = stringResource(R.string.select_from_app_list),
+            onClick = onGoToAppList
+        )
+    }
+
+    // 連絡先から追加
+    item {
+        NavigationCard(
+            icon = "👤",
+            text = stringResource(R.string.add_from_contact),
+            onClick = onContactPicker
+        )
+    }
+
+    // アプリ内機能
+    item {
+        SectionHeader(text = stringResource(R.string.internal_features))
+    }
+    items(internalFeatures) { feature ->
+        InternalFeatureCard(
+            feature = feature,
+            onClick = { onSelectInternal(feature) }
+        )
+    }
+
+    // 未配置ショートカット
+    if (unplacedShortcuts.isNotEmpty()) {
+        item {
+            SectionHeader(text = stringResource(R.string.unplaced_shortcuts))
+        }
+        items(unplacedShortcuts) { shortcut ->
+            ShortcutCard(
+                shortcut = shortcut,
+                subtitleResId = R.string.tap_to_place,
+                backgroundColor = MaterialTheme.colorScheme.surface,
+                onClick = { onSelectUnplaced(shortcut) }
+            )
+        }
+    }
+}
+
 @Composable
 private fun MainSelectContent(
     unplacedShortcuts: List<ShortcutItem>,
@@ -434,49 +476,13 @@ private fun MainSelectContent(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // アプリ一覧へ
-        item {
-            NavigationCard(
-                icon = "📱",
-                text = stringResource(R.string.select_from_app_list),
-                onClick = onGoToAppList
-            )
-        }
-
-        // 連絡先から追加
-        item {
-            NavigationCard(
-                icon = "👤",
-                text = stringResource(R.string.add_from_contact),
-                onClick = onContactPicker
-            )
-        }
-
-        // アプリ内機能
-        item {
-            SectionHeader(text = stringResource(R.string.internal_features))
-        }
-        items(internalFeatures) { feature ->
-            InternalFeatureCard(
-                feature = feature,
-                onClick = { onSelectInternal(feature) }
-            )
-        }
-
-        // 未配置ショートカット
-        if (unplacedShortcuts.isNotEmpty()) {
-            item {
-                SectionHeader(text = stringResource(R.string.unplaced_shortcuts))
-            }
-            items(unplacedShortcuts) { shortcut ->
-                ShortcutCard(
-                    shortcut = shortcut,
-                    subtitleResId = R.string.tap_to_place,
-                    backgroundColor = MaterialTheme.colorScheme.surface,
-                    onClick = { onSelectUnplaced(shortcut) }
-                )
-            }
-        }
+        commonSelectContent(
+            unplacedShortcuts = unplacedShortcuts,
+            onSelectUnplaced = onSelectUnplaced,
+            onSelectInternal = onSelectInternal,
+            onGoToAppList = onGoToAppList,
+            onContactPicker = onContactPicker
+        )
     }
 }
 
@@ -502,49 +508,14 @@ private fun SlotEditMainContent(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // アプリ一覧へ
-        item {
-            NavigationCard(
-                icon = "📱",
-                text = stringResource(R.string.select_from_app_list),
-                onClick = onGoToAppList
-            )
-        }
-
-        // 連絡先から追加
-        item {
-            NavigationCard(
-                icon = "👤",
-                text = stringResource(R.string.add_from_contact),
-                onClick = onContactPicker
-            )
-        }
-
-        // アプリ内機能
-        item {
-            SectionHeader(text = stringResource(R.string.internal_features))
-        }
-        items(internalFeatures) { feature ->
-            InternalFeatureCard(
-                feature = feature,
-                onClick = { onSelectInternal(feature) }
-            )
-        }
-
-        // 未配置ショートカット
-        if (unplacedShortcuts.isNotEmpty()) {
-            item {
-                SectionHeader(text = stringResource(R.string.unplaced_shortcuts))
-            }
-            items(unplacedShortcuts) { shortcut ->
-                ShortcutCard(
-                    shortcut = shortcut,
-                    subtitleResId = R.string.tap_to_place,
-                    backgroundColor = MaterialTheme.colorScheme.surface,
-                    onClick = { onSelectUnplaced(shortcut) }
-                )
-            }
-        }
+        // 共通コンテンツ
+        commonSelectContent(
+            unplacedShortcuts = unplacedShortcuts,
+            onSelectUnplaced = onSelectUnplaced,
+            onSelectInternal = onSelectInternal,
+            onGoToAppList = onGoToAppList,
+            onContactPicker = onContactPicker
+        )
 
         // 配置済みと入れ替え
         if (placedShortcuts.isNotEmpty()) {
@@ -1001,8 +972,8 @@ private fun InternalFeatureCard(
     }
 }
 
-// 開発時のみパッケージ名を表示
-private const val SHOW_PACKAGE_NAME = true
+// 開発時のみパッケージ名を表示（本番はfalse）
+private const val SHOW_PACKAGE_NAME = false
 
 @Composable
 private fun AppCard(
@@ -1078,68 +1049,6 @@ private fun DrawableImage(drawable: Drawable, size: Int) {
         contentDescription = null,
         modifier = Modifier.size(size.dp)
     )
-}
-
-@Composable
-private fun ColumnChangeOptionCard(
-    columns: Int,
-    description: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
-        ),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 分割数のプレビュー
-            Row(
-                modifier = Modifier.width(80.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                repeat(columns) {
-                    Card(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(32.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        ),
-                        shape = RoundedCornerShape(4.dp)
-                    ) {}
-                }
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column {
-                Text(
-                    text = stringResource(R.string.column_count_format, columns),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = description,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
 }
 
 /**

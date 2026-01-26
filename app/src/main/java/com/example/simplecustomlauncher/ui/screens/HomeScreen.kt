@@ -110,6 +110,26 @@ fun getLocalizedLabel(item: ShortcutItem): String {
 }
 
 /**
+ * タップモードに応じたクリック処理のModifier
+ */
+@OptIn(ExperimentalFoundationApi::class)
+private fun Modifier.tapModeClickable(
+    isEditMode: Boolean,
+    tapMode: TapMode,
+    onClick: () -> Unit
+): Modifier = if (isEditMode) {
+    this.clickable(onClick = onClick)
+} else {
+    when (tapMode) {
+        TapMode.SINGLE_TAP -> this.clickable(onClick = onClick)
+        TapMode.LONG_TAP -> this.combinedClickable(
+            onClick = { /* タップでは何もしない */ },
+            onLongClick = onClick
+        )
+    }
+}
+
+/**
  * ホーム画面
  */
 @Composable
@@ -332,6 +352,13 @@ private fun HomePageContent(
     val context = LocalContext.current
     val view = LocalView.current
 
+    // タップフィードバック処理
+    val performFeedback: () -> Unit = {
+        if (tapFeedback) {
+            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+        }
+    }
+
     // このページの配置とレイアウト
     val pageRows = remember(viewModel.refreshKey, pageIndex) {
         layoutConfig.getRowsForPage(pageIndex)
@@ -355,9 +382,7 @@ private fun HomePageContent(
                 isEditMode = viewModel.isEditMode,
                 tapMode = tapMode,
                 onShortcutClick = { item ->
-                    if (tapFeedback) {
-                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                    }
+                    performFeedback()
                     when (item.type) {
                         ShortcutType.CALENDAR -> viewModel.navigateTo(MainScreenState.Calendar)
                         ShortcutType.MEMO -> viewModel.navigateTo(MainScreenState.Memo)
@@ -373,15 +398,11 @@ private fun HomePageContent(
                     }
                 },
                 onEmptyClick = { column ->
-                    if (tapFeedback) {
-                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                    }
+                    performFeedback()
                     viewModel.navigateToShortcutAdd(pageIndex, rowConfig.rowIndex, column)
                 },
                 onSlotClickInEditMode = { row, column, currentShortcut ->
-                    if (tapFeedback) {
-                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                    }
+                    performFeedback()
                     viewModel.navigateToSlotEdit(pageIndex, row, column, currentShortcut)
                 },
                 modifier = Modifier.weight(1f)
@@ -461,24 +482,10 @@ private fun ShortcutButton(
         item.packageName?.let { shortcutHelper.getAppIcon(it) }
     }
 
-    // タップモードに応じたModifier
-    val clickModifier = if (isEditMode) {
-        // 編集モード中は常にタップで反応
-        Modifier.clickable(onClick = onClick)
-    } else {
-        when (tapMode) {
-            TapMode.SINGLE_TAP -> Modifier.clickable(onClick = onClick)
-            TapMode.LONG_TAP -> Modifier.combinedClickable(
-                onClick = { /* タップでは何もしない */ },
-                onLongClick = onClick
-            )
-        }
-    }
-
     Card(
         modifier = Modifier
             .fillMaxSize()
-            .then(clickModifier)
+            .tapModeClickable(isEditMode, tapMode, onClick)
             .then(
                 if (isEditMode) Modifier.border(
                     width = 3.dp,
@@ -687,23 +694,10 @@ private fun EmptySlotButton(
     tapMode: TapMode,
     onClick: () -> Unit
 ) {
-    // タップモードに応じたModifier
-    val clickModifier = if (isEditMode) {
-        Modifier.clickable(onClick = onClick)
-    } else {
-        when (tapMode) {
-            TapMode.SINGLE_TAP -> Modifier.clickable(onClick = onClick)
-            TapMode.LONG_TAP -> Modifier.combinedClickable(
-                onClick = { },
-                onLongClick = onClick
-            )
-        }
-    }
-
     Card(
         modifier = Modifier
             .fillMaxSize()
-            .then(clickModifier)
+            .tapModeClickable(isEditMode, tapMode, onClick)
             .then(
                 if (isEditMode) Modifier.border(
                     width = 2.dp,
