@@ -28,6 +28,7 @@ import com.example.simplecustomlauncher.data.ShortcutPlacement
 import com.example.simplecustomlauncher.data.ShortcutRepository
 import com.example.simplecustomlauncher.data.ShortcutType
 import com.example.simplecustomlauncher.data.ThemeMode
+import com.example.simplecustomlauncher.ui.screens.AllAppsScreen
 import com.example.simplecustomlauncher.ui.screens.AppSettingsScreen
 import com.example.simplecustomlauncher.ui.screens.CalendarFullScreen
 import com.example.simplecustomlauncher.ui.screens.HomeScreen
@@ -179,32 +180,32 @@ fun MainLauncherScreen(
             ShortcutAddScreen(
                 unplacedShortcuts = viewModel.getUnplacedShortcuts(),
                 onSelectUnplaced = { shortcut ->
-                    viewModel.targetSlot?.let { (row, col) ->
-                        viewModel.placeShortcut(shortcut, row, col)
+                    viewModel.targetSlot?.let { (page, row, col) ->
+                        viewModel.placeShortcut(shortcut, page, row, col)
                     }
                     viewModel.navigateToHome()
                 },
                 onSelectInternal = { feature ->
-                    viewModel.targetSlot?.let { (row, col) ->
-                        viewModel.placeInternalFeature(feature.type, feature.label, row, col)
+                    viewModel.targetSlot?.let { (page, row, col) ->
+                        viewModel.placeInternalFeature(feature.type, feature.label, page, row, col)
                     }
                     viewModel.navigateToHome()
                 },
                 onSelectApp = { app ->
-                    viewModel.targetSlot?.let { (row, col) ->
-                        viewModel.placeApp(app.packageName, app.label, row, col)
+                    viewModel.targetSlot?.let { (page, row, col) ->
+                        viewModel.placeApp(app.packageName, app.label, page, row, col)
                     }
                     viewModel.navigateToHome()
                 },
                 onSelectShortcut = { shortcut ->
-                    viewModel.targetSlot?.let { (row, col) ->
-                        viewModel.placeIntent(shortcut.shortLabel, shortcut.packageName, shortcut.id, row, col)
+                    viewModel.targetSlot?.let { (page, row, col) ->
+                        viewModel.placeIntent(shortcut.shortLabel, shortcut.packageName, shortcut.id, page, row, col)
                     }
                     viewModel.navigateToHome()
                 },
                 onSelectContact = { name, phoneNumber, type ->
-                    viewModel.targetSlot?.let { (row, col) ->
-                        viewModel.placeContact(name, phoneNumber, type, row, col)
+                    viewModel.targetSlot?.let { (page, row, col) ->
+                        viewModel.placeContact(name, phoneNumber, type, page, row, col)
                     }
                     viewModel.navigateToHome()
                 },
@@ -214,7 +215,8 @@ fun MainLauncherScreen(
 
         is MainScreenState.SlotEdit -> {
             val otherPlacedShortcuts = viewModel.getPlacedShortcuts().filter { it.id != state.currentShortcut?.id }
-            val currentColumns = viewModel.getLayoutConfig().getColumnsForRow(state.row)
+            val currentColumns = viewModel.getLayoutConfig().getColumnsForRow(state.pageIndex, state.row)
+            val totalPageCount = viewModel.getTotalPageCount()
 
             SlotEditScreen(
                 currentShortcut = state.currentShortcut,
@@ -222,27 +224,27 @@ fun MainLauncherScreen(
                 unplacedShortcuts = viewModel.getUnplacedShortcuts(),
                 placedShortcuts = otherPlacedShortcuts,
                 onSelectUnplaced = { shortcut ->
-                    viewModel.placeShortcut(shortcut, state.row, state.column)
+                    viewModel.placeShortcut(shortcut, state.pageIndex, state.row, state.column)
                     viewModel.navigateToHome()
                 },
                 onSelectPlaced = { shortcut ->
-                    viewModel.swapShortcuts(state.currentShortcut, shortcut, state.row, state.column)
+                    viewModel.swapShortcuts(state.currentShortcut, shortcut, state.pageIndex, state.row, state.column)
                     viewModel.navigateToHome()
                 },
                 onSelectApp = { app ->
-                    viewModel.placeApp(app.packageName, app.label, state.row, state.column)
+                    viewModel.placeApp(app.packageName, app.label, state.pageIndex, state.row, state.column)
                     viewModel.navigateToHome()
                 },
                 onSelectShortcut = { shortcut ->
-                    viewModel.placeIntent(shortcut.shortLabel, shortcut.packageName, shortcut.id, state.row, state.column)
+                    viewModel.placeIntent(shortcut.shortLabel, shortcut.packageName, shortcut.id, state.pageIndex, state.row, state.column)
                     viewModel.navigateToHome()
                 },
                 onSelectInternal = { feature ->
-                    viewModel.placeInternalFeature(feature.type, feature.label, state.row, state.column)
+                    viewModel.placeInternalFeature(feature.type, feature.label, state.pageIndex, state.row, state.column)
                     viewModel.navigateToHome()
                 },
                 onSelectContact = { name, phoneNumber, type ->
-                    viewModel.placeContact(name, phoneNumber, type, state.row, state.column)
+                    viewModel.placeContact(name, phoneNumber, type, state.pageIndex, state.row, state.column)
                     viewModel.navigateToHome()
                 },
                 onClear = {
@@ -250,13 +252,19 @@ fun MainLauncherScreen(
                     viewModel.navigateToHome()
                 },
                 onChangeColumns = { newColumns ->
-                    viewModel.changeRowColumns(state.row, newColumns)
+                    viewModel.changeRowColumns(state.pageIndex, state.row, newColumns)
                     viewModel.navigateToHome()
                 },
                 onDeleteRow = {
-                    viewModel.deleteRow(state.row)
+                    viewModel.deleteRow(state.pageIndex, state.row)
                     viewModel.navigateToHome()
                 },
+                onDeletePage = if (totalPageCount > 1) {
+                    {
+                        viewModel.deletePage(state.pageIndex)
+                        viewModel.navigateToHome()
+                    }
+                } else null,
                 onBack = { viewModel.navigateToHome() }
             )
         }
@@ -281,7 +289,16 @@ fun MainLauncherScreen(
                 onEnterEditMode = { viewModel.enterEditMode() },
                 onResetToDefault = { viewModel.resetToDefault() },
                 onClearLayout = { viewModel.clearLayout() },
-                onThemeChanged = onThemeChanged
+                onThemeChanged = onThemeChanged,
+                isPremiumProvider = { viewModel.isPremiumActive() },
+                onWatchAd = { viewModel.recordAdWatch() },
+                onPurchase = { viewModel.recordPurchase() }
+            )
+        }
+
+        is MainScreenState.AllApps -> {
+            AllAppsScreen(
+                onBack = { viewModel.navigateToHome() }
             )
         }
     }

@@ -28,8 +28,13 @@ fun AppSettingsScreen(
     onEnterEditMode: () -> Unit = {},
     onResetToDefault: () -> Unit = {},
     onClearLayout: () -> Unit = {},
-    onThemeChanged: (ThemeMode) -> Unit = {}
+    onThemeChanged: (ThemeMode) -> Unit = {},
+    isPremiumProvider: () -> Boolean = { false },
+    onWatchAd: () -> Unit = {},
+    onPurchase: () -> Unit = {}
 ) {
+    // 毎回評価されるように
+    val isPremium = isPremiumProvider()
     val context = LocalContext.current
     val settingsRepository = remember { SettingsRepository(context) }
 
@@ -37,8 +42,12 @@ fun AppSettingsScreen(
     var showConfirmDialog by remember { mutableStateOf(settingsRepository.showConfirmDialog) }
     var tapFeedback by remember { mutableStateOf(settingsRepository.tapFeedback) }
     var themeMode by remember { mutableStateOf(settingsRepository.themeMode) }
+    var pageCount by remember { mutableStateOf(settingsRepository.pageCount) }
+    var loopPagingEnabled by remember { mutableStateOf(settingsRepository.loopPagingEnabled) }
     var showTapModeDialog by remember { mutableStateOf(false) }
     var showThemeModeDialog by remember { mutableStateOf(false) }
+    var showPageCountDialog by remember { mutableStateOf(false) }
+    var showPremiumDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
     var showClearDialog by remember { mutableStateOf(false) }
 
@@ -99,7 +108,7 @@ fun AppSettingsScreen(
             item {
                 SettingsSwitchItem(
                     title = "起動時に確認",
-                    description = "起動前に確認ダイアログを表示",
+                    description = "アプリを起動する前に確認ダイアログを表示",
                     checked = showConfirmDialog,
                     onCheckedChange = {
                         showConfirmDialog = it
@@ -143,12 +152,40 @@ fun AppSettingsScreen(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
 
-            // ページ設定（将来の課金機能）
+            // ページ設定
             item {
-                SettingsDisabledItem(
+                SettingsPremiumSelectItem(
                     title = "ホーム画面のページ数",
-                    description = "準備中（今後のアップデートで追加予定）"
+                    description = if (isPremium) "スワイプで複数ページを切り替え" else "プレミアム機能：複数ページに対応",
+                    currentValue = if (isPremium) "${pageCount}ページ" else null,
+                    isPremiumActive = isPremium,
+                    onClick = {
+                        if (isPremium) {
+                            showPageCountDialog = true
+                        } else {
+                            showPremiumDialog = true
+                        }
+                    }
                 )
+            }
+
+            // ループページング
+            item {
+                SettingsPremiumSwitchItem(
+                    title = "ページのループ",
+                    description = "最後のページから最初のページへ移動可能",
+                    checked = loopPagingEnabled,
+                    enabled = isPremium && pageCount > 1,
+                    isPremiumFeature = true,
+                    onCheckedChange = {
+                        loopPagingEnabled = it
+                        settingsRepository.loopPagingEnabled = it
+                    }
+                )
+            }
+
+            item {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
 
             // レイアウト編集
@@ -345,6 +382,91 @@ fun AppSettingsScreen(
             }
         )
     }
+
+    // ページ数選択ダイアログ
+    if (showPageCountDialog) {
+        AlertDialog(
+            onDismissRequest = { showPageCountDialog = false },
+            title = { Text("ページ数を選択") },
+            text = {
+                Column {
+                    (1..SettingsRepository.MAX_PAGES).forEach { count ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    pageCount = count
+                                    settingsRepository.pageCount = count
+                                    showPageCountDialog = false
+                                }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = pageCount == count,
+                                onClick = {
+                                    pageCount = count
+                                    settingsRepository.pageCount = count
+                                    showPageCountDialog = false
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "${count}ページ",
+                                fontSize = 18.sp
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showPageCountDialog = false }) {
+                    Text("キャンセル")
+                }
+            }
+        )
+    }
+
+    // プレミアム機能ダイアログ
+    if (showPremiumDialog) {
+        AlertDialog(
+            onDismissRequest = { showPremiumDialog = false },
+            title = { Text("プレミアム機能") },
+            text = {
+                Column {
+                    Text("複数ページ機能はプレミアム限定です。")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("動画を見るか課金して解除できます。")
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onWatchAd()
+                        showPremiumDialog = false
+                    }
+                ) {
+                    Text("動画を見て24時間解除")
+                }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = { showPremiumDialog = false }) {
+                        Text("キャンセル")
+                    }
+                    TextButton(
+                        onClick = {
+                            onPurchase()
+                            showPremiumDialog = false
+                        }
+                    ) {
+                        Text("課金して永久解除")
+                    }
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -394,11 +516,24 @@ private fun SettingsSwitchItem(
     title: String,
     description: String,
     checked: Boolean,
+    enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit
 ) {
+    val textColor = if (enabled) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.outline
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(
+            containerColor = if (enabled) {
+                MaterialTheme.colorScheme.surface
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            }
+        ),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -411,17 +546,23 @@ private fun SettingsSwitchItem(
                 Text(
                     text = title,
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    color = textColor
                 )
                 Text(
                     text = description,
                     fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (enabled) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.outline
+                    }
                 )
             }
             Switch(
                 checked = checked,
-                onCheckedChange = onCheckedChange
+                onCheckedChange = onCheckedChange,
+                enabled = enabled
             )
         }
     }
@@ -456,6 +597,190 @@ private fun SettingsDisabledItem(
                     color = MaterialTheme.colorScheme.outline
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun SettingsPremiumItem(
+    title: String,
+    description: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = title,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Premium",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                }
+                Text(
+                    text = description,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsPremiumSelectItem(
+    title: String,
+    description: String,
+    currentValue: String?,
+    isPremiumActive: Boolean,
+    onClick: () -> Unit
+) {
+    val containerColor = if (isPremiumActive) {
+        MaterialTheme.colorScheme.surface
+    } else {
+        MaterialTheme.colorScheme.tertiaryContainer
+    }
+    val contentColor = if (isPremiumActive) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.onTertiaryContainer
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = title,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = contentColor
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Premium",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                }
+                Text(
+                    text = description,
+                    fontSize = 14.sp,
+                    color = contentColor.copy(alpha = 0.8f)
+                )
+            }
+            if (currentValue != null) {
+                Text(
+                    text = currentValue,
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsPremiumSwitchItem(
+    title: String,
+    description: String,
+    checked: Boolean,
+    enabled: Boolean = true,
+    isPremiumFeature: Boolean = false,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    val textColor = if (enabled) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.outline
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (enabled) {
+                MaterialTheme.colorScheme.surface
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            }
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = title,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = textColor
+                    )
+                    if (isPremiumFeature) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Premium",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (enabled) {
+                                MaterialTheme.colorScheme.tertiary
+                            } else {
+                                MaterialTheme.colorScheme.outline
+                            }
+                        )
+                    }
+                }
+                Text(
+                    text = description,
+                    fontSize = 14.sp,
+                    color = if (enabled) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.outline
+                    }
+                )
+            }
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                enabled = enabled
+            )
         }
     }
 }

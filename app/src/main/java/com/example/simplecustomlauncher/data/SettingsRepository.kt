@@ -71,11 +71,30 @@ class SettingsRepository(context: Context) {
         }
         set(value) = prefs.edit().putString(KEY_THEME_MODE, value.name).apply()
 
+    /**
+     * ループページングが有効かどうか
+     * 有効時: 最後のページから最初のページへ、最初のページから最後のページへスワイプ可能
+     */
+    var loopPagingEnabled: Boolean
+        get() = prefs.getBoolean(KEY_LOOP_PAGING, false)
+        set(value) = prefs.edit().putBoolean(KEY_LOOP_PAGING, value).apply()
+
+    /**
+     * ホーム画面のページ数（1〜5）
+     */
+    var pageCount: Int
+        get() = prefs.getInt(KEY_PAGE_COUNT, 1).coerceIn(1, MAX_PAGES)
+        set(value) = prefs.edit().putInt(KEY_PAGE_COUNT, value.coerceIn(1, MAX_PAGES)).apply()
+
     companion object {
         private const val PREFS_NAME = "launcher_settings"
         private const val KEY_TAP_MODE = "tap_mode"
         private const val KEY_CONFIRM_DIALOG = "show_confirm_dialog"
         private const val KEY_TAP_FEEDBACK = "tap_feedback"
         private const val KEY_THEME_MODE = "theme_mode"
+        private const val KEY_LOOP_PAGING = "loop_paging"
+        private const val KEY_PAGE_COUNT = "page_count"
+
+        const val MAX_PAGES = 5
     }
 }

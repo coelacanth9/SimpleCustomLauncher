@@ -20,10 +20,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
@@ -66,8 +69,12 @@ import com.example.simplecustomlauncher.data.ShortcutItem
 import com.example.simplecustomlauncher.data.ShortcutPlacement
 import com.example.simplecustomlauncher.data.ShortcutType
 import com.example.simplecustomlauncher.data.TapMode
+import com.example.simplecustomlauncher.ui.components.AddPageConfirmDialog
 import com.example.simplecustomlauncher.ui.components.AddRowDialog
 import com.example.simplecustomlauncher.ui.components.EditModeConfirmDialog
+import com.example.simplecustomlauncher.ui.components.PageIndicator
+import com.example.simplecustomlauncher.ui.components.PremiumLockOverlay
+import com.example.simplecustomlauncher.ui.components.PremiumRequiredForPageDialog
 import com.example.simplecustomlauncher.ui.components.ShortcutConfirmDialog
 import com.example.simplecustomlauncher.ui.theme.AppTheme
 
@@ -139,8 +146,26 @@ fun HomeScreen(
             onDismiss = { viewModel.dismissAddRowDialog() }
         )
     }
+
+    // ページ追加確認ダイアログ
+    if (viewModel.showAddPageConfirmDialog) {
+        AddPageConfirmDialog(
+            onConfirm = { viewModel.confirmAddPageWithRow() },
+            onDismiss = { viewModel.dismissAddPageConfirmDialog() }
+        )
+    }
+
+    // プレミアム誘導ダイアログ（ページ追加時）
+    if (viewModel.showPremiumRequiredForPageDialog) {
+        PremiumRequiredForPageDialog(
+            onWatchAd = { viewModel.watchAdAndAddPage() },
+            onPurchase = { viewModel.purchaseAndAddPage() },
+            onDismiss = { viewModel.dismissPremiumRequiredForPageDialog() }
+        )
+    }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HomeContent(
     viewModel: MainViewModel,
@@ -156,9 +181,133 @@ private fun HomeContent(
     // データを読み込み
     val layoutConfig = remember(viewModel.refreshKey) { viewModel.getLayoutConfig() }
     val shortcuts = remember(viewModel.refreshKey) { viewModel.getShortcutsMap() }
-    val placements = remember(viewModel.refreshKey) { viewModel.getAllPlacements() }
 
-    // 行ごとにグループ化
+    // ページング関連
+    val totalPageCount = remember(viewModel.refreshKey) { viewModel.getTotalPageCount() }
+    val isPremium = remember(viewModel.refreshKey) { viewModel.isPremiumActive() }
+    val loopEnabled = remember(viewModel.refreshKey) { viewModel.isLoopPagingEnabled() }
+
+    // ループページング用のページ数計算
+    // 安全な範囲でループを実現（1000周分）
+    val loopMultiplier = 1000
+    val effectivePageCount = if (loopEnabled && totalPageCount > 1) {
+        totalPageCount * loopMultiplier
+    } else {
+        totalPageCount
+    }
+    val initialPage = if (loopEnabled && totalPageCount > 1) {
+        // 中央付近から開始（500周目のページ0）
+        totalPageCount * (loopMultiplier / 2)
+    } else {
+        0
+    }
+
+    val pagerState = rememberPagerState(
+        initialPage = initialPage,
+        pageCount = { effectivePageCount }
+    )
+
+    // 現在のページをViewModelに同期
+    LaunchedEffect(pagerState.currentPage, totalPageCount, loopEnabled) {
+        val actualPage = if (loopEnabled && totalPageCount > 1) {
+            pagerState.currentPage % totalPageCount
+        } else {
+            pagerState.currentPage.coerceIn(0, maxOf(0, totalPageCount - 1))
+        }
+        viewModel.setCurrentPage(actualPage)
+    }
+
+    // ページ遷移リクエストを処理
+    LaunchedEffect(viewModel.navigateToPageRequest) {
+        viewModel.navigateToPageRequest?.let { targetPage ->
+            val targetPagerPage = if (loopEnabled && totalPageCount > 1) {
+                // ループ時は現在位置からの相対位置で計算
+                val currentActual = pagerState.currentPage % totalPageCount
+                pagerState.currentPage + (targetPage - currentActual)
+            } else {
+                targetPage
+            }
+            pagerState.animateScrollToPage(targetPagerPage)
+            viewModel.clearNavigateToPageRequest()
+        }
+    }
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+    ) {
+        // ページインジケーター（2ページ以上の場合のみ表示）
+        if (totalPageCount > 1) {
+            val currentActualPage = if (loopEnabled && totalPageCount > 1) {
+                pagerState.currentPage % totalPageCount
+            } else {
+                pagerState.currentPage
+            }
+            PageIndicator(
+                pageCount = totalPageCount,
+                currentPage = currentActualPage,
+                lockedFromPage = if (isPremium) -1 else 1  // 非プレミアム時は2ページ目以降ロック表示
+            )
+        }
+
+        // HorizontalPager
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+        ) { page ->
+            val actualPage = if (loopEnabled && totalPageCount > 1) {
+                page % totalPageCount
+            } else {
+                page
+            }
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                HomePageContent(
+                    viewModel = viewModel,
+                    pageIndex = actualPage,
+                    layoutConfig = layoutConfig,
+                    shortcuts = shortcuts,
+                    shortcutHelper = shortcutHelper,
+                    tapMode = tapMode,
+                    showConfirmDialog = showConfirmDialog,
+                    tapFeedback = tapFeedback
+                )
+
+                // 非プレミアム時、2ページ目以降は半透明カバー
+                if (!isPremium && actualPage > 0) {
+                    PremiumLockOverlay(
+                        onWatchAd = { viewModel.recordAdWatch() },
+                        onPurchase = { viewModel.recordPurchase() }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomePageContent(
+    viewModel: MainViewModel,
+    pageIndex: Int,
+    layoutConfig: com.example.simplecustomlauncher.data.HomeLayoutConfig,
+    shortcuts: Map<String, ShortcutItem>,
+    shortcutHelper: ShortcutHelper,
+    tapMode: TapMode,
+    showConfirmDialog: Boolean,
+    tapFeedback: Boolean
+) {
+    val context = LocalContext.current
+    val view = LocalView.current
+
+    // このページの配置とレイアウト
+    val pageRows = remember(viewModel.refreshKey, pageIndex) {
+        layoutConfig.getRowsForPage(pageIndex)
+    }
+    val placements = remember(viewModel.refreshKey, pageIndex) {
+        viewModel.getPlacementsForPage(pageIndex)
+    }
     val placementsByRow = placements.groupBy { it.row }
 
     Column(
@@ -167,7 +316,7 @@ private fun HomeContent(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        layoutConfig.rows.forEach { rowConfig ->
+        pageRows.forEach { rowConfig ->
             HomeRow(
                 rowConfig = rowConfig,
                 placements = placementsByRow[rowConfig.rowIndex] ?: emptyList(),
@@ -182,6 +331,7 @@ private fun HomeContent(
                         ShortcutType.CALENDAR -> viewModel.navigateTo(MainScreenState.Calendar)
                         ShortcutType.MEMO -> viewModel.navigateTo(MainScreenState.Memo)
                         ShortcutType.SETTINGS -> viewModel.navigateTo(MainScreenState.AppSettings)
+                        ShortcutType.ALL_APPS -> viewModel.navigateTo(MainScreenState.AllApps)
                         else -> {
                             if (showConfirmDialog) {
                                 viewModel.showShortcutConfirmDialog(item)
@@ -195,13 +345,13 @@ private fun HomeContent(
                     if (tapFeedback) {
                         view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                     }
-                    viewModel.navigateToShortcutAdd(rowConfig.rowIndex, column)
+                    viewModel.navigateToShortcutAdd(pageIndex, rowConfig.rowIndex, column)
                 },
                 onSlotClickInEditMode = { row, column, currentShortcut ->
                     if (tapFeedback) {
                         view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                     }
-                    viewModel.navigateToSlotEdit(row, column, currentShortcut)
+                    viewModel.navigateToSlotEdit(pageIndex, row, column, currentShortcut)
                 },
                 modifier = Modifier.weight(1f)
             )
@@ -491,6 +641,9 @@ private fun ShortcutIcon(
             } else {
                 Icon(Icons.Default.Phone, item.label, Modifier.size(size), MaterialTheme.colorScheme.tertiary)
             }
+        }
+        ShortcutType.ALL_APPS -> {
+            Icon(Icons.Default.Apps, "すべてのアプリ", Modifier.size(size), MaterialTheme.colorScheme.primary)
         }
         ShortcutType.EMPTY -> { }
     }

@@ -200,6 +200,7 @@ private fun ShortcutListItem(
                     ShortcutType.CALENDAR -> "📅"
                     ShortcutType.MEMO -> "📝"
                     ShortcutType.SETTINGS -> "⚙️"
+                    ShortcutType.ALL_APPS -> "📱"
                     ShortcutType.EMPTY -> ""
                     ShortcutType.DIALER -> "📞"
                 },

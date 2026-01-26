@@ -66,10 +66,21 @@ class ShortcutRepository(private val context: Context) {
         val placements = getAllPlacements().toMutableList()
         // 同じショートカットの既存配置を削除
         placements.removeAll { it.shortcutId == placement.shortcutId }
-        // 同じ位置の既存配置も削除（上書き）
-        placements.removeAll { it.row == placement.row && it.column == placement.column }
+        // 同じ位置（ページ+行+列）の既存配置も削除（上書き）
+        placements.removeAll {
+            it.pageIndex == placement.pageIndex &&
+            it.row == placement.row &&
+            it.column == placement.column
+        }
         placements.add(placement)
         saveAllPlacements(placements)
+    }
+
+    /**
+     * 指定ページの配置を取得
+     */
+    fun getPlacementsForPage(pageIndex: Int): List<ShortcutPlacement> {
+        return getAllPlacements().filter { it.pageIndex == pageIndex }
     }
 
     fun removePlacement(shortcutId: String) {
@@ -99,6 +110,7 @@ class ShortcutRepository(private val context: Context) {
         val array = JSONArray()
         config.rows.forEach { row ->
             array.put(JSONObject().apply {
+                put("pageIndex", row.pageIndex)
                 put("rowIndex", row.rowIndex)
                 put("columns", row.columns)
             })
@@ -113,6 +125,7 @@ class ShortcutRepository(private val context: Context) {
             val rows = (0 until array.length()).map { i ->
                 val obj = array.getJSONObject(i)
                 RowConfig(
+                    pageIndex = obj.optInt("pageIndex", 0),  // マイグレーション対応
                     rowIndex = obj.getInt("rowIndex"),
                     columns = obj.getInt("columns")
                 )
@@ -149,11 +162,18 @@ class ShortcutRepository(private val context: Context) {
     }
 
     /**
-     * 行ごとに配置されたショートカットを取得
+     * 行ごとに配置されたショートカットを取得（後方互換：ページ0のみ）
      */
     fun getShortcutsByRow(): Map<Int, List<Pair<ShortcutPlacement, ShortcutItem?>>> {
+        return getShortcutsByRowForPage(0)
+    }
+
+    /**
+     * 指定ページの行ごとに配置されたショートカットを取得
+     */
+    fun getShortcutsByRowForPage(pageIndex: Int): Map<Int, List<Pair<ShortcutPlacement, ShortcutItem?>>> {
         val shortcuts = getAllShortcuts()
-        val placements = getAllPlacements()
+        val placements = getPlacementsForPage(pageIndex)
 
         return placements
             .groupBy { it.row }
@@ -312,6 +332,7 @@ class ShortcutRepository(private val context: Context) {
     private fun placementToJson(placement: ShortcutPlacement): JSONObject {
         return JSONObject().apply {
             put("shortcutId", placement.shortcutId)
+            put("pageIndex", placement.pageIndex)
             put("row", placement.row)
             put("column", placement.column)
             put("spanX", placement.spanX)
@@ -322,6 +343,7 @@ class ShortcutRepository(private val context: Context) {
     private fun jsonToPlacement(json: JSONObject): ShortcutPlacement {
         return ShortcutPlacement(
             shortcutId = json.getString("shortcutId"),
+            pageIndex = json.optInt("pageIndex", 0),  // マイグレーション対応
             row = json.getInt("row"),
             column = json.getInt("column"),
             spanX = json.optInt("spanX", 1),

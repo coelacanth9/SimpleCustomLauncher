@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.example.simplecustomlauncher.data.HomeLayoutConfig
+import com.example.simplecustomlauncher.data.PremiumManager
 import com.example.simplecustomlauncher.data.RowConfig
 import com.example.simplecustomlauncher.data.SettingsRepository
 import com.example.simplecustomlauncher.data.ShortcutItem
@@ -23,8 +24,13 @@ import java.util.UUID
  */
 sealed class MainScreenState {
     object Home : MainScreenState()
-    object ShortcutAdd : MainScreenState()
+    data class ShortcutAdd(
+        val pageIndex: Int = 0,
+        val row: Int = 0,
+        val column: Int = 0
+    ) : MainScreenState()
     data class SlotEdit(
+        val pageIndex: Int = 0,
         val row: Int,
         val column: Int,
         val currentShortcut: ShortcutItem?
@@ -32,6 +38,7 @@ sealed class MainScreenState {
     object Calendar : MainScreenState()
     object Memo : MainScreenState()
     object AppSettings : MainScreenState()
+    object AllApps : MainScreenState()
 }
 
 /**
@@ -48,7 +55,8 @@ data class ErrorEvent(
 class MainViewModel(
     private val shortcutRepository: ShortcutRepository,
     private val settingsRepository: SettingsRepository,
-    private val calendarRepository: CalendarRepository
+    private val calendarRepository: CalendarRepository,
+    private val premiumManager: PremiumManager
 ) : ViewModel() {
 
     // 画面状態
@@ -64,11 +72,21 @@ class MainViewModel(
         private set
     var showAddRowDialog by mutableStateOf(false)
         private set
+    var showAddPageConfirmDialog by mutableStateOf(false)
+        private set
+    var showPremiumRequiredForPageDialog by mutableStateOf(false)
+        private set
+    var pendingRowColumns by mutableStateOf(0)
+        private set
     var shortcutToConfirm by mutableStateOf<ShortcutItem?>(null)
         private set
 
-    // ターゲットスロット（ショートカット追加時）
-    var targetSlot by mutableStateOf<Pair<Int, Int>?>(null)
+    // ターゲットスロット（ショートカット追加時）: Triple<pageIndex, row, column>
+    var targetSlot by mutableStateOf<Triple<Int, Int, Int>?>(null)
+        private set
+
+    // 現在のページインデックス
+    var currentPageIndex by mutableStateOf(0)
         private set
 
     // エラーイベント
@@ -110,6 +128,64 @@ class MainViewModel(
         }
     }
 
+    /**
+     * 指定ページの配置を取得
+     */
+    fun getPlacementsForPage(pageIndex: Int): List<ShortcutPlacement> {
+        return shortcutRepository.getPlacementsForPage(pageIndex)
+    }
+
+    // === ページング関連 ===
+
+    /**
+     * プレミアム状態を取得
+     */
+    fun isPremiumActive(): Boolean = premiumManager.isPremiumActive()
+
+    /**
+     * アクセス可能なページ数を取得
+     */
+    fun getAccessiblePageCount(): Int {
+        return if (premiumManager.isPremiumActive()) {
+            settingsRepository.pageCount
+        } else {
+            1  // 非プレミアム時は1ページのみ
+        }
+    }
+
+    /**
+     * 設定されたページ数を取得（プレミアム状態に関係なく）
+     */
+    fun getTotalPageCount(): Int = settingsRepository.pageCount
+
+    /**
+     * ループページングが有効かどうか
+     */
+    fun isLoopPagingEnabled(): Boolean = settingsRepository.loopPagingEnabled
+
+    /**
+     * 現在のページを設定
+     */
+    fun setCurrentPage(pageIndex: Int) {
+        currentPageIndex = pageIndex
+    }
+
+    /**
+     * 動画広告視聴を記録
+     */
+    fun recordAdWatch() {
+        premiumManager.recordAdWatch()
+        refresh()
+    }
+
+    /**
+     * 買い切り購入を記録
+     */
+    fun recordPurchase() {
+        premiumManager.recordPurchase()
+        refresh()
+    }
+
     // 祝日データ
     fun getHolidaysForMonth(year: Int, month: Int, hasPermission: Boolean): Map<Int, String> {
         return if (hasPermission) {
@@ -130,13 +206,13 @@ class MainViewModel(
         targetSlot = null
     }
 
-    fun navigateToShortcutAdd(row: Int, column: Int) {
-        targetSlot = row to column
-        screenState = MainScreenState.ShortcutAdd
+    fun navigateToShortcutAdd(pageIndex: Int, row: Int, column: Int) {
+        targetSlot = Triple(pageIndex, row, column)
+        screenState = MainScreenState.ShortcutAdd(pageIndex, row, column)
     }
 
-    fun navigateToSlotEdit(row: Int, column: Int, currentShortcut: ShortcutItem?) {
-        screenState = MainScreenState.SlotEdit(row, column, currentShortcut)
+    fun navigateToSlotEdit(pageIndex: Int, row: Int, column: Int, currentShortcut: ShortcutItem?) {
+        screenState = MainScreenState.SlotEdit(pageIndex, row, column, currentShortcut)
     }
 
     // === 編集モード ===
@@ -180,21 +256,126 @@ class MainViewModel(
         showAddRowDialog = false
     }
 
+    /**
+     * 現在のページに行を追加
+     */
     fun addRow(columns: Int) {
+        addRowToPage(currentPageIndex, columns)
+    }
+
+    /**
+     * 指定ページに行を追加
+     */
+    fun addRowToPage(pageIndex: Int, columns: Int) {
         val currentConfig = shortcutRepository.getLayoutConfig()
+        val pageRows = currentConfig.getRowsForPage(pageIndex)
 
         // 行数上限チェック（1ページあたり最大5行）
-        if (currentConfig.rows.size >= MAX_ROWS_PER_PAGE) {
-            showError("1ページに追加できる行は${MAX_ROWS_PER_PAGE}行までです")
+        if (pageRows.size >= MAX_ROWS_PER_PAGE) {
+            val currentPageCount = settingsRepository.pageCount
+            if (currentPageCount < SettingsRepository.MAX_PAGES) {
+                // ページ追加可能
+                pendingRowColumns = columns
+                if (premiumManager.isPremiumActive()) {
+                    // プレミアム有効 → 確認ダイアログを表示
+                    showAddPageConfirmDialog = true
+                } else {
+                    // 未課金 → プレミアム誘導ダイアログを表示
+                    showPremiumRequiredForPageDialog = true
+                }
+            } else {
+                // 5ページ全て満杯 → 何もできない
+                showError("これ以上行を追加できません")
+            }
             showAddRowDialog = false
             return
         }
 
-        val newRowIndex = currentConfig.rows.maxOfOrNull { it.rowIndex }?.plus(1) ?: 0
-        val newRows = currentConfig.rows + RowConfig(rowIndex = newRowIndex, columns = columns)
+        val newRowIndex = pageRows.maxOfOrNull { it.rowIndex }?.plus(1) ?: 0
+        val newRows = currentConfig.rows + RowConfig(
+            pageIndex = pageIndex,
+            rowIndex = newRowIndex,
+            columns = columns
+        )
         shortcutRepository.saveLayoutConfig(HomeLayoutConfig(rows = newRows))
         refresh()
         showAddRowDialog = false
+    }
+
+    /**
+     * ページ追加確認ダイアログを閉じる
+     */
+    fun dismissAddPageConfirmDialog() {
+        showAddPageConfirmDialog = false
+        pendingRowColumns = 0
+    }
+
+    /**
+     * プレミアム誘導ダイアログを閉じる
+     */
+    fun dismissPremiumRequiredForPageDialog() {
+        showPremiumRequiredForPageDialog = false
+        pendingRowColumns = 0
+    }
+
+    /**
+     * 動画視聴でプレミアム解除してページ追加
+     */
+    fun watchAdAndAddPage() {
+        premiumManager.recordAdWatch()
+        showPremiumRequiredForPageDialog = false
+        // プレミアム有効になったのでページ追加を実行
+        confirmAddPageWithRow()
+    }
+
+    /**
+     * 課金でプレミアム解除してページ追加
+     */
+    fun purchaseAndAddPage() {
+        premiumManager.recordPurchase()
+        showPremiumRequiredForPageDialog = false
+        // プレミアム有効になったのでページ追加を実行
+        confirmAddPageWithRow()
+    }
+
+    // ページ遷移リクエスト（UIが監視して遷移する）
+    var navigateToPageRequest by mutableStateOf<Int?>(null)
+        private set
+
+    fun clearNavigateToPageRequest() {
+        navigateToPageRequest = null
+    }
+
+    /**
+     * 新しいページを追加して行を追加
+     */
+    fun confirmAddPageWithRow() {
+        val currentPageCount = settingsRepository.pageCount
+        if (currentPageCount >= SettingsRepository.MAX_PAGES) {
+            showAddPageConfirmDialog = false
+            return
+        }
+
+        // ページ数を増やす
+        val newPageCount = currentPageCount + 1
+        settingsRepository.pageCount = newPageCount
+
+        // 新しいページに行を追加
+        val currentConfig = shortcutRepository.getLayoutConfig()
+        val newPageIndex = newPageCount - 1
+        val newRows = currentConfig.rows + RowConfig(
+            pageIndex = newPageIndex,
+            rowIndex = 0,
+            columns = pendingRowColumns
+        )
+        shortcutRepository.saveLayoutConfig(HomeLayoutConfig(rows = newRows))
+
+        refresh()
+        showAddPageConfirmDialog = false
+        pendingRowColumns = 0
+
+        // 新しいページへ遷移をリクエスト
+        navigateToPageRequest = newPageIndex
     }
 
     companion object {
@@ -213,26 +394,31 @@ class MainViewModel(
 
     // === ショートカット操作 ===
 
-    fun placeShortcut(shortcut: ShortcutItem, row: Int, column: Int) {
+    fun placeShortcut(shortcut: ShortcutItem, pageIndex: Int, row: Int, column: Int) {
         shortcutRepository.savePlacement(
-            ShortcutPlacement(shortcutId = shortcut.id, row = row, column = column)
+            ShortcutPlacement(
+                shortcutId = shortcut.id,
+                pageIndex = pageIndex,
+                row = row,
+                column = column
+            )
         )
         refresh()
     }
 
-    fun placeInternalFeature(type: ShortcutType, label: String, row: Int, column: Int) {
+    fun placeInternalFeature(type: ShortcutType, label: String, pageIndex: Int, row: Int, column: Int) {
         val allShortcuts = getAllShortcuts()
         val item = findOrCreateInternalShortcut(allShortcuts, type, label)
-        placeShortcut(item, row, column)
+        placeShortcut(item, pageIndex, row, column)
     }
 
-    fun placeApp(packageName: String, label: String, row: Int, column: Int) {
+    fun placeApp(packageName: String, label: String, pageIndex: Int, row: Int, column: Int) {
         val allShortcuts = getAllShortcuts()
         val item = findOrCreateAppShortcut(allShortcuts, packageName, label)
-        placeShortcut(item, row, column)
+        placeShortcut(item, pageIndex, row, column)
     }
 
-    fun placeIntent(shortLabel: String, packageName: String, shortcutId: String, row: Int, column: Int) {
+    fun placeIntent(shortLabel: String, packageName: String, shortcutId: String, pageIndex: Int, row: Int, column: Int) {
         val item = ShortcutItem(
             id = UUID.randomUUID().toString(),
             type = ShortcutType.INTENT,
@@ -241,10 +427,10 @@ class MainViewModel(
         )
         shortcutRepository.saveShortcut(item)
         shortcutRepository.savePinShortcutInfo(item.id, shortcutId, packageName)
-        placeShortcut(item, row, column)
+        placeShortcut(item, pageIndex, row, column)
     }
 
-    fun placeContact(name: String, phoneNumber: String, type: ShortcutType, row: Int, column: Int) {
+    fun placeContact(name: String, phoneNumber: String, type: ShortcutType, pageIndex: Int, row: Int, column: Int) {
         val item = ShortcutItem(
             id = UUID.randomUUID().toString(),
             type = type,
@@ -252,10 +438,10 @@ class MainViewModel(
             phoneNumber = phoneNumber
         )
         shortcutRepository.saveShortcut(item)
-        placeShortcut(item, row, column)
+        placeShortcut(item, pageIndex, row, column)
     }
 
-    fun swapShortcuts(currentShortcut: ShortcutItem?, targetShortcut: ShortcutItem, row: Int, column: Int) {
+    fun swapShortcuts(currentShortcut: ShortcutItem?, targetShortcut: ShortcutItem, pageIndex: Int, row: Int, column: Int) {
         val placements = getAllPlacements()
         val existingPlacement = placements.find { it.shortcutId == targetShortcut.id }
 
@@ -265,6 +451,7 @@ class MainViewModel(
                 shortcutRepository.savePlacement(
                     ShortcutPlacement(
                         shortcutId = currentShortcut.id,
+                        pageIndex = existingPlacement.pageIndex,
                         row = existingPlacement.row,
                         column = existingPlacement.column
                     )
@@ -276,7 +463,12 @@ class MainViewModel(
         }
         // 選択したショートカットをこのスロットに配置
         shortcutRepository.savePlacement(
-            ShortcutPlacement(shortcutId = targetShortcut.id, row = row, column = column)
+            ShortcutPlacement(
+                shortcutId = targetShortcut.id,
+                pageIndex = pageIndex,
+                row = row,
+                column = column
+            )
         )
         refresh()
     }
@@ -286,37 +478,84 @@ class MainViewModel(
         refresh()
     }
 
-    fun deleteRow(rowIndex: Int) {
+    fun deleteRow(pageIndex: Int, rowIndex: Int) {
         // この行の配置を全て削除
         val currentPlacements = shortcutRepository.getAllPlacements()
-        currentPlacements.filter { it.row == rowIndex }.forEach {
+        currentPlacements.filter { it.pageIndex == pageIndex && it.row == rowIndex }.forEach {
             shortcutRepository.removePlacement(it.shortcutId)
         }
         // レイアウトから行を削除
         val currentConfig = shortcutRepository.getLayoutConfig()
-        val newRows = currentConfig.rows.filter { it.rowIndex != rowIndex }
+        val newRows = currentConfig.rows.filter {
+            !(it.pageIndex == pageIndex && it.rowIndex == rowIndex)
+        }
         shortcutRepository.saveLayoutConfig(HomeLayoutConfig(rows = newRows))
         refresh()
     }
 
-    fun changeRowColumns(rowIndex: Int, newColumns: Int) {
+    fun changeRowColumns(pageIndex: Int, rowIndex: Int, newColumns: Int) {
         val currentConfig = shortcutRepository.getLayoutConfig()
         val currentPlacements = shortcutRepository.getAllPlacements()
 
         // 分割数を減らす場合、はみ出た配置を削除
         currentPlacements
-            .filter { it.row == rowIndex && it.column >= newColumns }
+            .filter { it.pageIndex == pageIndex && it.row == rowIndex && it.column >= newColumns }
             .forEach { shortcutRepository.removePlacement(it.shortcutId) }
 
         // レイアウト更新
         val newRows = currentConfig.rows.map { row ->
-            if (row.rowIndex == rowIndex) {
+            if (row.pageIndex == pageIndex && row.rowIndex == rowIndex) {
                 row.copy(columns = newColumns)
             } else {
                 row
             }
         }
         shortcutRepository.saveLayoutConfig(HomeLayoutConfig(rows = newRows))
+        refresh()
+    }
+
+    /**
+     * 指定ページを削除
+     */
+    fun deletePage(pageIndex: Int) {
+        val currentConfig = shortcutRepository.getLayoutConfig()
+        val currentPlacements = shortcutRepository.getAllPlacements()
+        val currentPageCount = settingsRepository.pageCount
+
+        // 1ページしかない場合は削除できない
+        if (currentPageCount <= 1) return
+
+        // このページの配置を全て削除
+        currentPlacements.filter { it.pageIndex == pageIndex }.forEach {
+            shortcutRepository.removePlacement(it.shortcutId)
+        }
+
+        // このページの行を削除し、後続ページのpageIndexを1つ減らす
+        val newRows = currentConfig.rows
+            .filter { it.pageIndex != pageIndex }
+            .map { row ->
+                if (row.pageIndex > pageIndex) {
+                    row.copy(pageIndex = row.pageIndex - 1)
+                } else {
+                    row
+                }
+            }
+        shortcutRepository.saveLayoutConfig(HomeLayoutConfig(rows = newRows))
+
+        // 後続ページの配置のpageIndexも1つ減らす
+        val remainingPlacements = shortcutRepository.getAllPlacements()
+        remainingPlacements.filter { it.pageIndex > pageIndex }.forEach { placement ->
+            shortcutRepository.savePlacement(placement.copy(pageIndex = placement.pageIndex - 1))
+        }
+
+        // ページ数を減らす
+        settingsRepository.pageCount = currentPageCount - 1
+
+        // 削除したページが現在ページだった場合、前のページへ移動
+        if (currentPageIndex >= currentPageCount - 1) {
+            navigateToPageRequest = maxOf(0, currentPageIndex - 1)
+        }
+
         refresh()
     }
 
@@ -368,6 +607,7 @@ class MainViewModel(
                 ShortcutType.CALENDAR -> navigateTo(MainScreenState.Calendar)
                 ShortcutType.MEMO -> navigateTo(MainScreenState.Memo)
                 ShortcutType.SETTINGS -> navigateTo(MainScreenState.AppSettings)
+                ShortcutType.ALL_APPS -> navigateTo(MainScreenState.AllApps)
                 ShortcutType.EMPTY -> { /* 何もしない */ }
             }
         } catch (e: Exception) {

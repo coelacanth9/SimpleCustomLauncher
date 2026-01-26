@@ -56,7 +56,8 @@ data class InternalFeature(
 val internalFeatures = listOf(
     InternalFeature(ShortcutType.CALENDAR, "カレンダー", "📅"),
     InternalFeature(ShortcutType.MEMO, "メモ帳", "📝"),
-    InternalFeature(ShortcutType.DIALER, "電話", "📞")
+    InternalFeature(ShortcutType.DIALER, "電話", "📞"),
+    InternalFeature(ShortcutType.ALL_APPS, "すべてのアプリ", "📱")
 )
 
 /**
@@ -227,6 +228,7 @@ fun SlotEditScreen(
     onClear: () -> Unit,
     onChangeColumns: (Int) -> Unit,
     onDeleteRow: () -> Unit,
+    onDeletePage: (() -> Unit)? = null,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -315,6 +317,7 @@ fun SlotEditScreen(
                     onClear = onClear,
                     onShowColumnsDialog = { showColumnsDialog = true },
                     onDeleteRow = onDeleteRow,
+                    onDeletePage = onDeletePage,
                     modifier = Modifier.padding(paddingValues)
                 )
             }
@@ -485,6 +488,7 @@ private fun SlotEditMainContent(
     onClear: () -> Unit,
     onShowColumnsDialog: () -> Unit,
     onDeleteRow: () -> Unit,
+    onDeletePage: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -594,13 +598,27 @@ private fun SlotEditMainContent(
             )
         }
 
+        // このページを削除（2ページ以上の場合のみ）
+        if (onDeletePage != null) {
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            item {
+                ActionCard(
+                    text = "このページを削除する",
+                    color = MaterialTheme.colorScheme.error,
+                    onClick = onDeletePage
+                )
+            }
+        }
+
         item { Spacer(modifier = Modifier.height(32.dp)) }
     }
 }
 
 // 優先表示するアプリのパッケージ名（完全一致または先頭一致）
 // 上から順に表示される
-private val priorityAppPackages = listOf(
+internal val priorityAppPackages = listOf(
     // 1. 電話・連絡先（最重要）
     "com.android.dialer",
     "com.google.android.dialer",
@@ -648,7 +666,7 @@ private val priorityAppPackages = listOf(
     "com.google.android.apps.bard",
 )
 
-private fun isPriorityApp(packageName: String): Boolean {
+internal fun isPriorityApp(packageName: String): Boolean {
     return priorityAppPackages.any {
         packageName == it || packageName.startsWith("$it.")
     }
@@ -658,7 +676,7 @@ private fun isPriorityApp(packageName: String): Boolean {
  * 優先アプリの配列内でのインデックスを取得（ソート用）
  * 一致しない場合はInt.MAX_VALUEを返す
  */
-private fun getPriorityIndex(packageName: String): Int {
+internal fun getPriorityIndex(packageName: String): Int {
     val index = priorityAppPackages.indexOfFirst {
         packageName == it || packageName.startsWith("$it.")
     }
@@ -906,6 +924,7 @@ private fun ShortcutCard(
                     ShortcutType.CALENDAR -> "📅"
                     ShortcutType.MEMO -> "📝"
                     ShortcutType.SETTINGS -> "⚙️"
+                    ShortcutType.ALL_APPS -> "📱"
                     ShortcutType.EMPTY -> ""
                 },
                 fontSize = 24.sp
