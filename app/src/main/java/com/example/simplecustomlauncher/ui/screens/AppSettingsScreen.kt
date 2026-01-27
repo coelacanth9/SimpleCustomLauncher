@@ -34,11 +34,13 @@ fun AppSettingsScreen(
     isPremiumProvider: () -> Boolean = { false },
     onWatchAd: () -> Unit = {},
     onPurchase: () -> Unit = {},
-    formattedPriceProvider: () -> String? = { null }
+    formattedPriceProvider: () -> String? = { null },
+    isAdReadyProvider: () -> Boolean = { true }
 ) {
     // 毎回評価されるように
     val isPremium = isPremiumProvider()
     val formattedPrice = formattedPriceProvider()
+    val isAdReady = isAdReadyProvider()
     val context = LocalContext.current
     val settingsRepository = remember { SettingsRepository(context) }
 
@@ -465,9 +467,16 @@ fun AppSettingsScreen(
                     onClick = {
                         onWatchAd()
                         showPremiumDialog = false
-                    }
+                    },
+                    enabled = isAdReady
                 ) {
-                    Text(stringResource(R.string.watch_ad_unlock))
+                    Text(
+                        if (isAdReady) {
+                            stringResource(R.string.watch_ad_unlock)
+                        } else {
+                            stringResource(R.string.ad_loading)
+                        }
+                    )
                 }
             },
             dismissButton = {

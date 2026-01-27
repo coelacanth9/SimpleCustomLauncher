@@ -36,6 +36,7 @@ fun PremiumLockOverlay(
     onWatchAd: () -> Unit,
     onPurchase: () -> Unit,
     formattedPrice: String? = null,
+    isAdReady: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -79,9 +80,16 @@ fun PremiumLockOverlay(
 
             Button(
                 onClick = onWatchAd,
+                enabled = isAdReady,
                 modifier = Modifier.padding(horizontal = 16.dp)
             ) {
-                Text(stringResource(R.string.watch_ad_unlock))
+                Text(
+                    if (isAdReady) {
+                        stringResource(R.string.watch_ad_unlock)
+                    } else {
+                        stringResource(R.string.ad_loading)
+                    }
+                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))

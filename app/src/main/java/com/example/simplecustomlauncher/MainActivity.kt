@@ -14,10 +14,14 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import com.example.simplecustomlauncher.ui.theme.SimpleCustomLauncherTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -39,6 +43,7 @@ import java.time.LocalDate
 import java.util.UUID
 import android.content.pm.ActivityInfo
 import com.example.simplecustomlauncher.R
+import com.example.simplecustomlauncher.ads.AdManager
 import com.example.simplecustomlauncher.billing.BillingManager
 import com.example.simplecustomlauncher.data.DefaultPremiumManager
 import com.example.simplecustomlauncher.data.PremiumManager
@@ -49,6 +54,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var premiumManager: PremiumManager
     private lateinit var billingManager: BillingManager
+    private lateinit var adManager: AdManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,6 +78,10 @@ class MainActivity : ComponentActivity() {
         )
         billingManager.initialize()
 
+        // AdManager 初期化
+        adManager = AdManager(this)
+        adManager.initialize()
+
         // 初回起動時にデフォルトレイアウトを適用
         if (shortcutRepository.isFirstLaunch()) {
             shortcutRepository.applyDefaultLayout()
@@ -93,6 +103,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     MainLauncherScreen(
                         billingManager = billingManager,
+                        adManager = adManager,
                         onThemeChanged = { newMode ->
                             themeMode = newMode
                         }
@@ -155,6 +166,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainLauncherScreen(
     billingManager: BillingManager,
+    adManager: AdManager,
     onThemeChanged: (ThemeMode) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -162,8 +174,22 @@ fun MainLauncherScreen(
 
     // ViewModel
     val viewModel: MainViewModel = viewModel(
-        factory = MainViewModelFactory(context, billingManager)
+        factory = MainViewModelFactory(context, billingManager, adManager)
     )
+
+    // ライフサイクル監視（onResumeでプレミアム状態を再チェック）
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refreshPremiumStatus()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     // 権限状態
     var hasPermission by remember {
@@ -316,12 +342,15 @@ fun MainLauncherScreen(
                 onResetToDefault = { viewModel.resetToDefault() },
                 onClearLayout = { viewModel.clearLayout() },
                 onThemeChanged = onThemeChanged,
-                isPremiumProvider = { viewModel.isPremiumActive() },
-                onWatchAd = { viewModel.recordAdWatch() },
+                isPremiumProvider = { viewModel.isPremium },
+                onWatchAd = {
+                    activity?.let { viewModel.showRewardedAd(it) }
+                },
                 onPurchase = {
                     activity?.let { viewModel.launchPurchase(it) }
                 },
-                formattedPriceProvider = { viewModel.getFormattedPrice() }
+                formattedPriceProvider = { viewModel.getFormattedPrice() },
+                isAdReadyProvider = { viewModel.isAdReady() }
             )
         }
 

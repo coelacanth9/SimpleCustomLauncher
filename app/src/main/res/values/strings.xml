@@ -103,6 +103,7 @@
     <string name="premium_unlock_short">動画を見るか課金して解除できます。</string>
     <string name="premium_add_page_prompt">ページの追加はプレミアム機能です。\n動画視聴または課金で\nご利用いただけます。</string>
     <string name="watch_ad_unlock">動画を見て24時間解除</string>
+    <string name="ad_loading">広告を読み込み中…</string>
     <string name="purchase_unlock">課金して永久解除</string>
     <string name="purchase_with_price">%sで永久解除</string>
     <string name="premium_price_format">%sで永久に解除できます。</string>

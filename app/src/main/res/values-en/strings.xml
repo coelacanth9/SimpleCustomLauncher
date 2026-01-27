@@ -103,6 +103,7 @@
     <string name="premium_unlock_short">Watch an ad or purchase to unlock.</string>
     <string name="premium_add_page_prompt">Adding pages is a premium feature.\nWatch an ad or purchase\nto unlock.</string>
     <string name="watch_ad_unlock">Watch ad for 24h access</string>
+    <string name="ad_loading">Loading ad…</string>
     <string name="purchase_unlock">Purchase for permanent access</string>
     <string name="purchase_with_price">Unlock forever for %s</string>
     <string name="premium_price_format">Unlock forever for %s.</string>

@@ -330,9 +330,10 @@ private fun HomeContent(
                 if (!isPremium && actualPage > 0) {
                     val activity = context as? android.app.Activity
                     PremiumLockOverlay(
-                        onWatchAd = { viewModel.recordAdWatch() },
+                        onWatchAd = { activity?.let { viewModel.showRewardedAd(it) } },
                         onPurchase = { activity?.let { viewModel.launchPurchase(it) } },
-                        formattedPrice = viewModel.getFormattedPrice()
+                        formattedPrice = viewModel.getFormattedPrice(),
+                        isAdReady = viewModel.isAdReady()
                     )
                 }
             }

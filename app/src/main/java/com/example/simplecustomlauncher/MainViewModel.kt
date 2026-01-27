@@ -10,6 +10,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.example.simplecustomlauncher.ads.AdManager
+import com.example.simplecustomlauncher.ads.AdState
 import com.example.simplecustomlauncher.billing.BillingConnectionState
 import com.example.simplecustomlauncher.billing.BillingManager
 import com.example.simplecustomlauncher.billing.ProductInfo
@@ -92,7 +94,8 @@ class MainViewModel(
     private val settingsRepository: SettingsRepository,
     private val calendarRepository: CalendarRepository,
     private val premiumManager: PremiumManager,
-    private val billingManager: BillingManager? = null
+    private val billingManager: BillingManager? = null,
+    private val adManager: AdManager? = null
 ) : ViewModel() {
 
     // === 課金関連 ===
@@ -128,6 +131,34 @@ class MainViewModel(
      */
     fun restorePurchases() {
         billingManager?.restorePurchases()
+    }
+
+    // === 広告関連 ===
+
+    /** 広告の状態 */
+    val adState: StateFlow<AdState>?
+        get() = adManager?.adState
+
+    /**
+     * 広告が表示可能かどうか
+     */
+    fun isAdReady(): Boolean = adManager?.isAdReady() == true
+
+    /**
+     * リワード広告を表示
+     */
+    fun showRewardedAd(activity: Activity) {
+        adManager?.showRewardedAd(activity) {
+            // 報酬獲得時の処理
+            recordAdWatch()
+        }
+    }
+
+    /**
+     * 広告を再読み込み
+     */
+    fun reloadAd() {
+        adManager?.loadRewardedAd()
     }
 
     // 画面状態
@@ -209,9 +240,26 @@ class MainViewModel(
     // === ページング関連 ===
 
     /**
+     * プレミアム状態（UIで監視可能）
+     */
+    var isPremium by mutableStateOf(premiumManager.isPremiumActive())
+        private set
+
+    /**
      * プレミアム状態を取得
      */
     fun isPremiumActive(): Boolean = premiumManager.isPremiumActive()
+
+    /**
+     * プレミアム状態を再チェック（onResume時に呼ぶ）
+     */
+    fun refreshPremiumStatus() {
+        val newStatus = premiumManager.isPremiumActive()
+        if (isPremium != newStatus) {
+            isPremium = newStatus
+            refresh()
+        }
+    }
 
     /**
      * アクセス可能なページ数を取得
@@ -246,6 +294,7 @@ class MainViewModel(
      */
     fun recordAdWatch() {
         premiumManager.recordAdWatch()
+        isPremium = premiumManager.isPremiumActive()
         refresh()
     }
 
@@ -254,6 +303,7 @@ class MainViewModel(
      */
     fun recordPurchase() {
         premiumManager.recordPurchase()
+        isPremium = premiumManager.isPremiumActive()
         refresh()
     }
 

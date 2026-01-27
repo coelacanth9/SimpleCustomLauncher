@@ -3,6 +3,7 @@ package com.example.simplecustomlauncher
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.example.simplecustomlauncher.ads.AdManager
 import com.example.simplecustomlauncher.billing.BillingManager
 import com.example.simplecustomlauncher.data.DefaultPremiumManager
 import com.example.simplecustomlauncher.data.SettingsRepository
@@ -13,7 +14,8 @@ import com.example.simplecustomlauncher.data.ShortcutRepository
  */
 class MainViewModelFactory(
     private val context: Context,
-    private val billingManager: BillingManager? = null
+    private val billingManager: BillingManager? = null,
+    private val adManager: AdManager? = null
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
@@ -25,7 +27,8 @@ class MainViewModelFactory(
                 settingsRepository = settingsRepository,
                 calendarRepository = CalendarRepository(context),
                 premiumManager = DefaultPremiumManager(context, settingsRepository),
-                billingManager = billingManager
+                billingManager = billingManager,
+                adManager = adManager
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
