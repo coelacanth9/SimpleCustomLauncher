@@ -11,7 +11,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.simplecustomlauncher"
+        applicationId = "com.coelacanth9.simplecustomlauncher"
         minSdk = 33
         targetSdk = 36
         versionCode = 1
