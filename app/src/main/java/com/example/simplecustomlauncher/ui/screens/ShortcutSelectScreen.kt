@@ -8,7 +8,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,8 +15,9 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -201,7 +202,7 @@ fun ShortcutAddScreen(
                             is SelectScreenState.AppShortcuts -> screenState = SelectScreenState.AppList
                         }
                     }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -331,7 +332,7 @@ fun SlotEditScreen(
                             is SelectScreenState.AppShortcuts -> screenState = SelectScreenState.AppList
                         }
                     }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -468,7 +469,7 @@ private fun LazyListScope.commonSelectContent(
     // アプリ一覧へ
     item {
         NavigationCard(
-            icon = "📱",
+            icon = { Text(text = "📱", fontSize = 24.sp) },
             text = stringResource(R.string.select_from_app_list),
             onClick = onGoToAppList
         )
@@ -477,20 +478,51 @@ private fun LazyListScope.commonSelectContent(
     // 連絡先から追加
     item {
         NavigationCard(
-            icon = "👤",
+            icon = {
+                val context = LocalContext.current
+                val contactsIcon = remember {
+                    // 連絡先アプリのアイコンを取得
+                    val pm = context.packageManager
+                    val contactsPackages = listOf(
+                        "com.google.android.contacts",
+                        "com.android.contacts"
+                    )
+                    contactsPackages.firstNotNullOfOrNull { pkg ->
+                        try {
+                            pm.getApplicationIcon(pkg)
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+                }
+                if (contactsIcon != null) {
+                    Image(
+                        bitmap = contactsIcon.toBitmap(64, 64).asImageBitmap(),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            },
             text = stringResource(R.string.add_from_contact),
             onClick = onContactPicker
         )
     }
 
-    // アプリ内機能
+    // アプリ内機能（3列グリッド）
     item {
         SectionHeader(text = stringResource(R.string.internal_features))
     }
-    items(internalFeatures) { feature ->
-        InternalFeatureCard(
-            feature = feature,
-            onClick = { onSelectInternal(feature) }
+    item {
+        InternalFeaturesGrid(
+            features = internalFeatures,
+            onSelectInternal = onSelectInternal
         )
     }
 
@@ -901,7 +933,7 @@ private fun SectionHeader(text: String) {
 
 @Composable
 private fun NavigationCard(
-    icon: String,
+    icon: @Composable () -> Unit,
     text: String,
     onClick: () -> Unit
 ) {
@@ -918,7 +950,7 @@ private fun NavigationCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = icon, fontSize = 24.sp)
+            icon()
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = text,
@@ -990,27 +1022,58 @@ private fun ShortcutCard(
 }
 
 @Composable
-private fun InternalFeatureCard(
+private fun InternalFeaturesGrid(
+    features: List<InternalFeature>,
+    onSelectInternal: (InternalFeature) -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // 3列×2行のグリッド
+        features.chunked(3).forEach { rowFeatures ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                rowFeatures.forEach { feature ->
+                    InternalFeatureGridItem(
+                        feature = feature,
+                        onClick = { onSelectInternal(feature) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                // 空きスペースを埋める（3列未満の場合）
+                repeat(3 - rowFeatures.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InternalFeatureGridItem(
     feature: InternalFeature,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val contentColor = MaterialTheme.colorScheme.onTertiaryContainer
     val label = stringResource(feature.labelResId)
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (feature.type == ShortcutType.DIALER) {
-                // カスタムアイコン
                 val dialerIcon = remember {
                     ContextCompat.getDrawable(context, R.drawable.ic_phone_keypad)
                 }
@@ -1019,19 +1082,22 @@ private fun InternalFeatureCard(
                     Image(
                         bitmap = bitmap.asImageBitmap(),
                         contentDescription = label,
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(28.dp),
                         colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(contentColor)
                     )
                 }
             } else {
-                Text(text = feature.icon, fontSize = 24.sp)
+                Text(text = feature.icon, fontSize = 28.sp)
             }
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = label,
-                fontSize = 18.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
-                color = contentColor
+                color = contentColor,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
         }
     }

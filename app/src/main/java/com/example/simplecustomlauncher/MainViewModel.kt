@@ -2,7 +2,6 @@ package com.example.simplecustomlauncher
 
 import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.content.pm.LauncherApps
 import android.os.Process
 import android.util.Log
@@ -652,14 +651,37 @@ class MainViewModel(
 
     fun clearSlot(shortcut: ShortcutItem) {
         shortcutRepository.removePlacement(shortcut.id)
+        // 内部機能は未配置に残さない（いつでも「アプリ内機能」から選べるため）
+        if (shortcut.type.isInternalFeature()) {
+            shortcutRepository.deleteShortcut(shortcut.id)
+        }
         refresh()
+    }
+
+    private fun ShortcutType.isInternalFeature(): Boolean {
+        return this in listOf(
+            ShortcutType.CALENDAR,
+            ShortcutType.MEMO,
+            ShortcutType.DIALER,
+            ShortcutType.ALL_APPS,
+            ShortcutType.DATE_DISPLAY,
+            ShortcutType.TIME_DISPLAY,
+            ShortcutType.SETTINGS
+        )
     }
 
     fun deleteRow(pageIndex: Int, rowIndex: Int) {
         // この行の配置を全て削除
         val currentPlacements = shortcutRepository.getAllPlacements()
-        currentPlacements.filter { it.pageIndex == pageIndex && it.row == rowIndex }.forEach {
-            shortcutRepository.removePlacement(it.shortcutId)
+        val shortcuts = shortcutRepository.getAllShortcuts()
+        currentPlacements.filter { it.pageIndex == pageIndex && it.row == rowIndex }.forEach { placement ->
+            shortcutRepository.removePlacement(placement.shortcutId)
+            // 内部機能は完全に削除
+            shortcuts[placement.shortcutId]?.let { shortcut ->
+                if (shortcut.type.isInternalFeature()) {
+                    shortcutRepository.deleteShortcut(shortcut.id)
+                }
+            }
         }
         // レイアウトから行を削除
         val currentConfig = shortcutRepository.getLayoutConfig()
@@ -673,11 +695,20 @@ class MainViewModel(
     fun changeRowColumns(pageIndex: Int, rowIndex: Int, newColumns: Int) {
         val currentConfig = shortcutRepository.getLayoutConfig()
         val currentPlacements = shortcutRepository.getAllPlacements()
+        val shortcuts = shortcutRepository.getAllShortcuts()
 
         // 分割数を減らす場合、はみ出た配置を削除
         currentPlacements
             .filter { it.pageIndex == pageIndex && it.row == rowIndex && it.column >= newColumns }
-            .forEach { shortcutRepository.removePlacement(it.shortcutId) }
+            .forEach { placement ->
+                shortcutRepository.removePlacement(placement.shortcutId)
+                // 内部機能は完全に削除
+                shortcuts[placement.shortcutId]?.let { shortcut ->
+                    if (shortcut.type.isInternalFeature()) {
+                        shortcutRepository.deleteShortcut(shortcut.id)
+                    }
+                }
+            }
 
         // レイアウト更新
         val newRows = currentConfig.rows.map { row ->
@@ -749,14 +780,21 @@ class MainViewModel(
     fun deletePage(pageIndex: Int) {
         val currentConfig = shortcutRepository.getLayoutConfig()
         val currentPlacements = shortcutRepository.getAllPlacements()
+        val shortcuts = shortcutRepository.getAllShortcuts()
         val currentPageCount = settingsRepository.pageCount
 
         // 1ページしかない場合は削除できない
         if (currentPageCount <= 1) return
 
         // このページの配置を全て削除
-        currentPlacements.filter { it.pageIndex == pageIndex }.forEach {
-            shortcutRepository.removePlacement(it.shortcutId)
+        currentPlacements.filter { it.pageIndex == pageIndex }.forEach { placement ->
+            shortcutRepository.removePlacement(placement.shortcutId)
+            // 内部機能は完全に削除
+            shortcuts[placement.shortcutId]?.let { shortcut ->
+                if (shortcut.type.isInternalFeature()) {
+                    shortcutRepository.deleteShortcut(shortcut.id)
+                }
+            }
         }
 
         // このページの行を削除し、後続ページのpageIndexを1つ減らす
