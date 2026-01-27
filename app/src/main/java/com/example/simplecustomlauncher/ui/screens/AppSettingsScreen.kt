@@ -33,10 +33,12 @@ fun AppSettingsScreen(
     onThemeChanged: (ThemeMode) -> Unit = {},
     isPremiumProvider: () -> Boolean = { false },
     onWatchAd: () -> Unit = {},
-    onPurchase: () -> Unit = {}
+    onPurchase: () -> Unit = {},
+    formattedPriceProvider: () -> String? = { null }
 ) {
     // 毎回評価されるように
     val isPremium = isPremiumProvider()
+    val formattedPrice = formattedPriceProvider()
     val context = LocalContext.current
     val settingsRepository = remember { SettingsRepository(context) }
 
@@ -451,7 +453,11 @@ fun AppSettingsScreen(
                 Column {
                     Text(stringResource(R.string.premium_page_only))
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(stringResource(R.string.premium_unlock_short))
+                    if (formattedPrice != null) {
+                        Text(stringResource(R.string.premium_price_format, formattedPrice))
+                    } else {
+                        Text(stringResource(R.string.premium_unlock_short))
+                    }
                 }
             },
             confirmButton = {
@@ -475,7 +481,13 @@ fun AppSettingsScreen(
                             showPremiumDialog = false
                         }
                     ) {
-                        Text(stringResource(R.string.purchase_unlock))
+                        Text(
+                            if (formattedPrice != null) {
+                                stringResource(R.string.purchase_with_price, formattedPrice)
+                            } else {
+                                stringResource(R.string.purchase_unlock)
+                            }
+                        )
                     }
                 }
             }

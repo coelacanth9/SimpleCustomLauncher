@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 fun PremiumLockOverlay(
     onWatchAd: () -> Unit,
     onPurchase: () -> Unit,
+    formattedPrice: String? = null,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -90,7 +91,11 @@ fun PremiumLockOverlay(
                 modifier = Modifier.padding(horizontal = 16.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.purchase_unlock),
+                    text = if (formattedPrice != null) {
+                        stringResource(R.string.purchase_with_price, formattedPrice)
+                    } else {
+                        stringResource(R.string.purchase_unlock)
+                    },
                     color = Color.White
                 )
             }

@@ -328,9 +328,11 @@ private fun HomeContent(
 
                 // 非プレミアム時、2ページ目以降は半透明カバー
                 if (!isPremium && actualPage > 0) {
+                    val activity = context as? android.app.Activity
                     PremiumLockOverlay(
                         onWatchAd = { viewModel.recordAdWatch() },
-                        onPurchase = { viewModel.recordPurchase() }
+                        onPurchase = { activity?.let { viewModel.launchPurchase(it) } },
+                        formattedPrice = viewModel.getFormattedPrice()
                     )
                 }
             }

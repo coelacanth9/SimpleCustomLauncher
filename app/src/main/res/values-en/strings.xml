@@ -104,7 +104,13 @@
     <string name="premium_add_page_prompt">Adding pages is a premium feature.\nWatch an ad or purchase\nto unlock.</string>
     <string name="watch_ad_unlock">Watch ad for 24h access</string>
     <string name="purchase_unlock">Purchase for permanent access</string>
+    <string name="purchase_with_price">Unlock forever for %s</string>
+    <string name="premium_price_format">Unlock forever for %s.</string>
     <string name="lock">Lock</string>
+    <string name="billing_unavailable">Cannot connect to billing service</string>
+    <string name="purchase_complete">Purchase complete</string>
+    <string name="purchase_restored">Purchase restored</string>
+    <string name="purchase_failed">Purchase failed</string>
 
     <!-- Contact -->
     <string name="contact">Contacts</string>

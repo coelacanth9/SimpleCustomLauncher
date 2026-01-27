@@ -104,7 +104,13 @@
     <string name="premium_add_page_prompt">ページの追加はプレミアム機能です。\n動画視聴または課金で\nご利用いただけます。</string>
     <string name="watch_ad_unlock">動画を見て24時間解除</string>
     <string name="purchase_unlock">課金して永久解除</string>
+    <string name="purchase_with_price">%sで永久解除</string>
+    <string name="premium_price_format">%sで永久に解除できます。</string>
     <string name="lock">ロック</string>
+    <string name="billing_unavailable">課金サービスに接続できません</string>
+    <string name="purchase_complete">購入が完了しました</string>
+    <string name="purchase_restored">購入を復元しました</string>
+    <string name="purchase_failed">購入に失敗しました</string>
 
     <!-- Contact -->
     <string name="contact">連絡先</string>
