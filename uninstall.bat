@@ -1,3 +1,3 @@
 @echo off
-adb uninstall com.example.simplecustomlauncher
+adb uninstall com.coelacanth9.simplecustomlauncher
 pause
