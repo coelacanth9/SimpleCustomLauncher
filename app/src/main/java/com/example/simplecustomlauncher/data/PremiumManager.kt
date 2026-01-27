@@ -137,9 +137,9 @@ class DefaultPremiumManager(
         private const val KEY_AD_WATCH_EXPIRY = "ad_watch_expiry"
 
         // 動画広告視聴の有効期間（24時間）
-        //private const val AD_WATCH_DURATION_MS = 24 * 60 * 60 * 1000L
+        private const val AD_WATCH_DURATION_MS = 24 * 60 * 60 * 1000L
         // 動画広告視聴の有効期間テスト用（1分）
-        private const val AD_WATCH_DURATION_MS = 1* 60 * 1000L
+        //private const val AD_WATCH_DURATION_MS = 1* 60 * 1000L
 
     }
 }
