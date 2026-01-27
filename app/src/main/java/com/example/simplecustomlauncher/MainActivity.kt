@@ -39,10 +39,16 @@ import java.time.LocalDate
 import java.util.UUID
 import android.content.pm.ActivityInfo
 import com.example.simplecustomlauncher.R
+import com.example.simplecustomlauncher.billing.BillingManager
+import com.example.simplecustomlauncher.data.DefaultPremiumManager
+import com.example.simplecustomlauncher.data.PremiumManager
+
 class MainActivity : ComponentActivity() {
 
     private lateinit var shortcutRepository: ShortcutRepository
     private lateinit var settingsRepository: SettingsRepository
+    private lateinit var premiumManager: PremiumManager
+    private lateinit var billingManager: BillingManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +60,17 @@ class MainActivity : ComponentActivity() {
 
         shortcutRepository = ShortcutRepository(this)
         settingsRepository = SettingsRepository(this)
+        premiumManager = DefaultPremiumManager(this, settingsRepository)
+
+        // BillingManager 初期化
+        billingManager = BillingManager(
+            context = this,
+            onPurchaseComplete = {
+                // 購入完了時にPremiumManagerを更新
+                premiumManager.recordPurchase()
+            }
+        )
+        billingManager.initialize()
 
         // 初回起動時にデフォルトレイアウトを適用
         if (shortcutRepository.isFirstLaunch()) {
@@ -75,6 +92,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     MainLauncherScreen(
+                        billingManager = billingManager,
                         onThemeChanged = { newMode ->
                             themeMode = newMode
                         }
@@ -97,6 +115,11 @@ class MainActivity : ComponentActivity() {
         if (intent.hasExtra(LauncherApps.EXTRA_PIN_ITEM_REQUEST)) {
             handlePinShortcut(intent)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        billingManager.endConnection()
     }
 
     private fun handlePinShortcut(intent: Intent) {
@@ -131,13 +154,15 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainLauncherScreen(
+    billingManager: BillingManager,
     onThemeChanged: (ThemeMode) -> Unit = {}
 ) {
     val context = LocalContext.current
+    val activity = context as? android.app.Activity
 
     // ViewModel
     val viewModel: MainViewModel = viewModel(
-        factory = MainViewModelFactory(context)
+        factory = MainViewModelFactory(context, billingManager)
     )
 
     // 権限状態
@@ -293,7 +318,10 @@ fun MainLauncherScreen(
                 onThemeChanged = onThemeChanged,
                 isPremiumProvider = { viewModel.isPremiumActive() },
                 onWatchAd = { viewModel.recordAdWatch() },
-                onPurchase = { viewModel.recordPurchase() }
+                onPurchase = {
+                    activity?.let { viewModel.launchPurchase(it) }
+                },
+                formattedPriceProvider = { viewModel.getFormattedPrice() }
             )
         }
 
