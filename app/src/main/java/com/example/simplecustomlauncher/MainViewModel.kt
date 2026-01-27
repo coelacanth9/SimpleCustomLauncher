@@ -1,5 +1,6 @@
 package com.example.simplecustomlauncher
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.LauncherApps
@@ -9,6 +10,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.example.simplecustomlauncher.billing.BillingConnectionState
+import com.example.simplecustomlauncher.billing.BillingManager
+import com.example.simplecustomlauncher.billing.ProductInfo
+import com.example.simplecustomlauncher.billing.PurchaseState
 import com.example.simplecustomlauncher.data.HomeLayoutConfig
 import com.example.simplecustomlauncher.data.PremiumManager
 import com.example.simplecustomlauncher.data.RowConfig
@@ -17,6 +22,7 @@ import com.example.simplecustomlauncher.data.ShortcutItem
 import com.example.simplecustomlauncher.data.ShortcutPlacement
 import com.example.simplecustomlauncher.data.ShortcutRepository
 import com.example.simplecustomlauncher.data.ShortcutType
+import kotlinx.coroutines.flow.StateFlow
 import java.util.UUID
 
 /**
@@ -85,8 +91,44 @@ class MainViewModel(
     private val shortcutRepository: ShortcutRepository,
     private val settingsRepository: SettingsRepository,
     private val calendarRepository: CalendarRepository,
-    private val premiumManager: PremiumManager
+    private val premiumManager: PremiumManager,
+    private val billingManager: BillingManager? = null
 ) : ViewModel() {
+
+    // === 課金関連 ===
+
+    /** 課金接続状態 */
+    val billingConnectionState: StateFlow<BillingConnectionState>?
+        get() = billingManager?.connectionState
+
+    /** 商品情報（価格など） */
+    val billingProductInfo: StateFlow<ProductInfo?>?
+        get() = billingManager?.productInfo
+
+    /** 購入処理状態 */
+    val billingPurchaseState: StateFlow<PurchaseState>?
+        get() = billingManager?.purchaseState
+
+    /**
+     * フォーマット済み価格を取得
+     */
+    fun getFormattedPrice(): String? {
+        return billingManager?.productInfo?.value?.formattedPrice
+    }
+
+    /**
+     * 購入フローを起動
+     */
+    fun launchPurchase(activity: Activity) {
+        billingManager?.launchPurchaseFlow(activity)
+    }
+
+    /**
+     * 購入を復元
+     */
+    fun restorePurchases() {
+        billingManager?.restorePurchases()
+    }
 
     // 画面状態
     var screenState by mutableStateOf<MainScreenState>(MainScreenState.Home)
