@@ -576,8 +576,8 @@ private fun ShortcutButton(
             when (columns) {
                 1 -> {
                     // 横並びレイアウト（1列）- アイコンと文字を中央にグループ化
-                    val iconSize = buttonHeight * 0.55f
-                    val labelSize = (buttonHeight.value * 0.22f).sp
+                    val iconSize = minOf(buttonHeight * 0.65f, 80.dp)  // 最大80dp
+                    val labelSize = minOf(buttonHeight.value * 0.26f, 32f).sp  // 最大32sp
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -594,14 +594,14 @@ private fun ShortcutButton(
                                 color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = labelSize,
                                 fontWeight = FontWeight.Bold,
-                                maxLines = 1,
+                                maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
                             if (isEditMode) {
                                 Text(
                                     text = stringResource(R.string.tap_to_edit),
                                     color = MaterialTheme.colorScheme.secondary,
-                                    fontSize = (buttonHeight.value * 0.12f).sp
+                                    fontSize = minOf(buttonHeight.value * 0.14f, 16f).sp
                                 )
                             }
                         }
@@ -609,8 +609,8 @@ private fun ShortcutButton(
                 }
                 2 -> {
                     // 縦並びレイアウト（2列）
-                    val iconSize = minOf(buttonHeight * 0.5f, buttonWidth * 0.6f)
-                    val labelSize = (buttonHeight.value * 0.14f).sp
+                    val iconSize = minOf(buttonHeight * 0.55f, buttonWidth * 0.65f, 64.dp)  // 最大64dp
+                    val labelSize = minOf(buttonHeight.value * 0.18f, 24f).sp  // 最大24sp
 
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -625,21 +625,21 @@ private fun ShortcutButton(
                             fontSize = labelSize,
                             fontWeight = FontWeight.Medium,
                             textAlign = TextAlign.Center,
-                            maxLines = 1,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                         if (isEditMode) {
                             Text(
                                 text = stringResource(R.string.tap_to_edit),
                                 color = MaterialTheme.colorScheme.secondary,
-                                fontSize = (buttonHeight.value * 0.10f).sp
+                                fontSize = minOf(buttonHeight.value * 0.12f, 14f).sp
                             )
                         }
                     }
                 }
                 else -> {
                     // アイコンのみ（3列以上）
-                    val iconSize = minOf(buttonHeight * 0.6f, buttonWidth * 0.7f)
+                    val iconSize = minOf(buttonHeight * 0.7f, buttonWidth * 0.8f, 56.dp)  // 最大56dp
 
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
