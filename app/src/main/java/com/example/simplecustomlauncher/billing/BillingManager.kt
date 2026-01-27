@@ -6,7 +6,9 @@ import android.util.Log
 import com.android.billingclient.api.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -108,7 +110,11 @@ class BillingManager(
             .build()
 
         billingClient?.queryProductDetailsAsync(params) { result, productDetailsList ->
+            Log.d(TAG, "queryProductDetails response: ${result.responseCode}, list size: ${productDetailsList.size}")
             if (result.responseCode == BillingClient.BillingResponseCode.OK) {
+                if (productDetailsList.isEmpty()) {
+                    Log.w(TAG, "Product list is empty - product may not be available yet")
+                }
                 productDetailsList.firstOrNull()?.let { details ->
                     cachedProductDetails = details
                     val offerDetails = details.oneTimePurchaseOfferDetails
@@ -122,6 +128,8 @@ class BillingManager(
                             priceCurrencyCode = offerDetails.priceCurrencyCode
                         )
                         Log.d(TAG, "Product details loaded: ${offerDetails.formattedPrice}")
+                    } else {
+                        Log.w(TAG, "oneTimePurchaseOfferDetails is null")
                     }
                 }
             } else {
@@ -271,6 +279,8 @@ class BillingManager(
      * 接続を終了
      */
     fun endConnection() {
+        // CoroutineScopeをキャンセルして再接続ループを停止
+        scope.cancel()
         billingClient?.endConnection()
         billingClient = null
         cachedProductDetails = null

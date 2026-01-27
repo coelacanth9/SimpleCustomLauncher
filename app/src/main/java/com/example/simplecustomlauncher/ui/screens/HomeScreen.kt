@@ -82,6 +82,7 @@ import com.example.simplecustomlauncher.ui.components.AddPageConfirmDialog
 import com.example.simplecustomlauncher.ui.components.AddRowDialog
 import com.example.simplecustomlauncher.ui.components.EditModeConfirmDialog
 import com.example.simplecustomlauncher.ui.components.PageIndicator
+import com.example.simplecustomlauncher.ui.components.PageDeleteConfirmDialog
 import com.example.simplecustomlauncher.ui.components.PageResetConfirmDialog
 import com.example.simplecustomlauncher.ui.components.PremiumLockOverlay
 import com.example.simplecustomlauncher.ui.components.PremiumRequiredForPageDialog
@@ -168,6 +169,9 @@ fun HomeScreen(
                 onEditDone = { viewModel.exitEditMode() },
                 onAddRow = { viewModel.showAddRowDialogAction() },
                 onResetPage = { viewModel.showPageResetDialogAction() },
+                onDeletePage = if (viewModel.getTotalPageCount() > 1) {
+                    { viewModel.showPageDeleteDialogAction() }
+                } else null,
                 onLayoutEdit = { viewModel.showEditModeConfirmDialog() },
                 onAppSettings = { viewModel.navigateTo(MainScreenState.AppSettings) }
             )
@@ -235,6 +239,14 @@ fun HomeScreen(
             onDismiss = { viewModel.dismissPageResetDialog() }
         )
     }
+
+    // ページ削除確認ダイアログ
+    if (viewModel.showPageDeleteDialog) {
+        PageDeleteConfirmDialog(
+            onConfirm = { viewModel.confirmPageDelete() },
+            onDismiss = { viewModel.dismissPageDeleteDialog() }
+        )
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -268,10 +280,10 @@ private fun HomeContent(
         totalPageCount
     }
     val initialPage = if (loopEnabled && totalPageCount > 1) {
-        // 中央付近から開始（500周目のページ0）
-        totalPageCount * (loopMultiplier / 2)
+        // 中央付近から開始（500周目のページ0）+ 現在のページ
+        totalPageCount * (loopMultiplier / 2) + viewModel.currentPageIndex
     } else {
-        0
+        viewModel.currentPageIndex.coerceIn(0, maxOf(0, totalPageCount - 1))
     }
 
     val pagerState = rememberPagerState(
@@ -417,6 +429,7 @@ private fun HomePageContent(
                 shortcuts = shortcuts,
                 isEditMode = viewModel.isEditMode,
                 tapMode = tapMode,
+                textOnly = rowConfig.textOnly,
                 onShortcutClick = { item ->
                     performFeedback()
                     when (item.type) {
@@ -459,6 +472,7 @@ private fun HomeRow(
     shortcuts: Map<String, ShortcutItem>,
     isEditMode: Boolean,
     tapMode: TapMode,
+    textOnly: Boolean = false,
     onShortcutClick: (ShortcutItem) -> Unit,
     onEmptyClick: (column: Int) -> Unit,
     onSlotClickInEditMode: (row: Int, column: Int, currentShortcut: ShortcutItem?) -> Unit,
@@ -503,6 +517,9 @@ private fun HomeRow(
                                 columns = rowConfig.columns,
                                 isEditMode = isEditMode,
                                 tapMode = tapMode,
+                                textOnly = textOnly,
+                                backgroundColor = placement?.backgroundColor,
+                                textColor = placement?.textColor,
                                 onClick = {
                                     if (isEditMode) {
                                         onSlotClickInEditMode(rowConfig.rowIndex, colIndex, shortcut)
@@ -538,6 +555,9 @@ private fun ShortcutButton(
     columns: Int,
     isEditMode: Boolean,
     tapMode: TapMode,
+    textOnly: Boolean = false,
+    backgroundColor: String? = null,
+    textColor: String? = null,
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -546,6 +566,28 @@ private fun ShortcutButton(
     // アプリアイコンを取得
     val appIcon = remember(item.packageName) {
         item.packageName?.let { shortcutHelper.getAppIcon(it) }
+    }
+
+    // 背景色を計算
+    val cardBackgroundColor = if (backgroundColor != null) {
+        try {
+            Color(android.graphics.Color.parseColor(backgroundColor))
+        } catch (e: Exception) {
+            AppTheme.extendedColors.cardBackground
+        }
+    } else {
+        AppTheme.extendedColors.cardBackground
+    }
+
+    // 文字色を計算
+    val labelColor = if (textColor != null) {
+        try {
+            Color(android.graphics.Color.parseColor(textColor))
+        } catch (e: Exception) {
+            MaterialTheme.colorScheme.onSurface
+        }
+    } else {
+        MaterialTheme.colorScheme.onSurface
     }
 
     Card(
@@ -559,7 +601,7 @@ private fun ShortcutButton(
                     shape = RoundedCornerShape(16.dp)
                 ) else Modifier
             ),
-        colors = CardDefaults.cardColors(containerColor = AppTheme.extendedColors.cardBackground),
+        colors = CardDefaults.cardColors(containerColor = cardBackgroundColor),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
@@ -573,27 +615,90 @@ private fun ShortcutButton(
             val buttonHeight = maxHeight
             val buttonWidth = maxWidth
 
-            when (columns) {
-                1 -> {
-                    // 横並びレイアウト（1列）- アイコンと文字を中央にグループ化
-                    val iconSize = minOf(buttonHeight * 0.65f, 80.dp)  // 最大80dp
-                    val labelSize = minOf(buttonHeight.value * 0.26f, 32f).sp  // 最大32sp
+            if (textOnly) {
+                // 文字のみモード
+                val labelSize = when (columns) {
+                    1 -> minOf(buttonHeight.value * 0.35f, 40f).sp
+                    2 -> minOf(buttonHeight.value * 0.28f, 32f).sp
+                    else -> minOf(buttonHeight.value * 0.22f, 24f).sp
+                }
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        ShortcutIcon(item = item, appIcon = appIcon, size = iconSize)
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(
-                            horizontalAlignment = Alignment.Start
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Text(
+                        text = getLocalizedLabel(item),
+                        color = labelColor,
+                        fontSize = labelSize,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (isEditMode) {
+                        Text(
+                            text = stringResource(R.string.tap_to_edit),
+                            color = MaterialTheme.colorScheme.secondary,
+                            fontSize = minOf(buttonHeight.value * 0.12f, 14f).sp
+                        )
+                    }
+                }
+            } else {
+                // 通常モード（アイコン+文字）
+                when (columns) {
+                    1 -> {
+                        // 横並びレイアウト（1列）- アイコンと文字を中央にグループ化
+                        val iconSize = minOf(buttonHeight * 0.65f, 80.dp)  // 最大80dp
+                        val labelSize = minOf(buttonHeight.value * 0.26f, 32f).sp  // 最大32sp
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxSize()
                         ) {
+                            ShortcutIcon(item = item, appIcon = appIcon, size = iconSize)
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(
+                                horizontalAlignment = Alignment.Start
+                            ) {
+                                Text(
+                                    text = getLocalizedLabel(item),
+                                    color = labelColor,
+                                    fontSize = labelSize,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                if (isEditMode) {
+                                    Text(
+                                        text = stringResource(R.string.tap_to_edit),
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        fontSize = minOf(buttonHeight.value * 0.14f, 16f).sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    2 -> {
+                        // 縦並びレイアウト（2列）
+                        val iconSize = minOf(buttonHeight * 0.55f, buttonWidth * 0.65f, 64.dp)  // 最大64dp
+                        val labelSize = minOf(buttonHeight.value * 0.18f, 24f).sp  // 最大24sp
+
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            ShortcutIcon(item = item, appIcon = appIcon, size = iconSize)
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = getLocalizedLabel(item),
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color = labelColor,
                                 fontSize = labelSize,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.Medium,
+                                textAlign = TextAlign.Center,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -601,58 +706,29 @@ private fun ShortcutButton(
                                 Text(
                                     text = stringResource(R.string.tap_to_edit),
                                     color = MaterialTheme.colorScheme.secondary,
-                                    fontSize = minOf(buttonHeight.value * 0.14f, 16f).sp
+                                    fontSize = minOf(buttonHeight.value * 0.12f, 14f).sp
                                 )
                             }
                         }
                     }
-                }
-                2 -> {
-                    // 縦並びレイアウト（2列）
-                    val iconSize = minOf(buttonHeight * 0.55f, buttonWidth * 0.65f, 64.dp)  // 最大64dp
-                    val labelSize = minOf(buttonHeight.value * 0.18f, 24f).sp  // 最大24sp
+                    else -> {
+                        // アイコンのみ（3列以上）
+                        val iconSize = minOf(buttonHeight * 0.7f, buttonWidth * 0.8f, 56.dp)  // 最大56dp
 
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        ShortcutIcon(item = item, appIcon = appIcon, size = iconSize)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = getLocalizedLabel(item),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = labelSize,
-                            fontWeight = FontWeight.Medium,
-                            textAlign = TextAlign.Center,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        if (isEditMode) {
-                            Text(
-                                text = stringResource(R.string.tap_to_edit),
-                                color = MaterialTheme.colorScheme.secondary,
-                                fontSize = minOf(buttonHeight.value * 0.12f, 14f).sp
-                            )
-                        }
-                    }
-                }
-                else -> {
-                    // アイコンのみ（3列以上）
-                    val iconSize = minOf(buttonHeight * 0.7f, buttonWidth * 0.8f, 56.dp)  // 最大56dp
-
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        ShortcutIcon(item = item, appIcon = appIcon, size = iconSize)
-                        if (isEditMode) {
-                            Text(
-                                text = stringResource(R.string.tap_to_edit),
-                                color = MaterialTheme.colorScheme.secondary,
-                                fontSize = (buttonHeight.value * 0.10f).sp
-                            )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            ShortcutIcon(item = item, appIcon = appIcon, size = iconSize)
+                            if (isEditMode) {
+                                Text(
+                                    text = stringResource(R.string.tap_to_edit),
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    fontSize = 12.sp,
+                                    maxLines = 1
+                                )
+                            }
                         }
                     }
                 }

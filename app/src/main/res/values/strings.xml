@@ -82,12 +82,21 @@
     <string name="column_2_desc">ボタン2つ横並び</string>
     <string name="column_3_desc">ボタン3つ横並び（アイコンのみ）</string>
     <string name="delete_row">この行全体を削除する</string>
+    <string name="delete_row_warning">この行のショートカットがすべて削除されます。よろしいですか？</string>
     <string name="cannot_add_more_rows">これ以上行を追加できません</string>
     <string name="column_reduce_warning">※分割数を減らすと、はみ出たショートカットは未配置になります</string>
+    <string name="display_mode">表示モード</string>
+    <string name="display_mode_icon_text">アイコン＋文字</string>
+    <string name="display_mode_text_only">文字のみ</string>
+    <string name="tap_to_change">タップで切替</string>
+    <string name="background_color">背景色+文字色</string>
+    <string name="background_color_default">デフォルト</string>
+    <string name="background_color_premium">色の変更はプレミアム機能です</string>
 
     <!-- Page Settings -->
     <string name="page_count_format">%dページ</string>
-    <string name="delete_page">このページを削除する</string>
+    <string name="delete_page">このページを削除</string>
+    <string name="delete_page_warning">このページのショートカットがすべて削除されます。よろしいですか？</string>
     <string name="add_page">ページを追加</string>
     <string name="select_page_count">ページ数を選択</string>
     <string name="page_limit_reached">このページは行数の上限に\n達しています。\n新しいページを追加しますか？</string>
@@ -135,7 +144,7 @@
     <string name="clear_layout_warning">すべてのページの行とアプリ配置が削除されます。この操作は取り消せません。よろしいですか？</string>
     <string name="clear_layout_desc">すべてのページの行と配置が削除されます</string>
     <string name="clear_confirm_message">すべてのページの行とアプリ配置が削除されます。この操作は取り消せません。よろしいですか？</string>
-    <string name="reset_page">このページをリセット</string>
+    <string name="reset_page">レイアウトをクリア</string>
     <string name="reset_page_warning">このページの行とアプリ配置が削除されます。よろしいですか？</string>
     <string name="reset_layout_warning">現在の配置がすべて消去され、デフォルトの配置に戻ります。この操作は取り消せません。よろしいですか？</string>
     <string name="reset_layout_desc">アプリの配置がデフォルトに戻ります</string>
@@ -163,6 +172,19 @@
     <string name="font_size_xlarge">特大 (28)</string>
     <string name="font_size_max">最大 (32)</string>
     <string name="version">バージョン</string>
+
+    <!-- Backup/Restore -->
+    <string name="backup_restore">バックアップ / 復元</string>
+    <string name="export_backup">設定をエクスポート</string>
+    <string name="export_backup_desc">レイアウトと設定をファイルに保存</string>
+    <string name="import_backup">設定をインポート</string>
+    <string name="import_backup_desc">ファイルからレイアウトと設定を復元</string>
+    <string name="backup_share_title">バックアップファイルを共有</string>
+    <string name="restore_success">復元しました（ショートカット: %1$d件、ページ: %2$d）</string>
+    <string name="restore_error">復元に失敗しました</string>
+    <string name="restore_confirm_title">バックアップを復元</string>
+    <string name="restore_confirm_message">現在のレイアウトと設定がすべて上書きされます。続けますか？</string>
+    <string name="restore">復元</string>
 
     <!-- Calendar -->
     <string name="calendar">カレンダー</string>

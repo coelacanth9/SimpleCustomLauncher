@@ -1,7 +1,10 @@
 package com.example.simplecustomlauncher.ui.screens
 
 import android.content.Intent
+import android.net.Uri
 import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,6 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.simplecustomlauncher.R
+import com.example.simplecustomlauncher.data.BackupManager
+import com.example.simplecustomlauncher.data.RestoreResult
 import com.example.simplecustomlauncher.data.SettingsRepository
 import com.example.simplecustomlauncher.data.TapMode
 import com.example.simplecustomlauncher.data.ThemeMode
@@ -35,7 +40,8 @@ fun AppSettingsScreen(
     onWatchAd: () -> Unit = {},
     onPurchase: () -> Unit = {},
     formattedPriceProvider: () -> String? = { null },
-    isAdReadyProvider: () -> Boolean = { true }
+    isAdReadyProvider: () -> Boolean = { true },
+    onRestoreComplete: () -> Unit = {}
 ) {
     // 毎回評価されるように
     val isPremium = isPremiumProvider()
@@ -43,6 +49,7 @@ fun AppSettingsScreen(
     val isAdReady = isAdReadyProvider()
     val context = LocalContext.current
     val settingsRepository = remember { SettingsRepository(context) }
+    val backupManager = remember { BackupManager(context) }
 
     var tapMode by remember { mutableStateOf(settingsRepository.tapMode) }
     var showConfirmDialog by remember { mutableStateOf(settingsRepository.showConfirmDialog) }
@@ -56,6 +63,22 @@ fun AppSettingsScreen(
     var showPremiumDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
     var showClearDialog by remember { mutableStateOf(false) }
+
+    // バックアップ/リストア用
+    var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
+    var showRestoreConfirmDialog by remember { mutableStateOf(false) }
+    var restoreResultMessage by remember { mutableStateOf<String?>(null) }
+    var showRestoreResultDialog by remember { mutableStateOf(false) }
+
+    // ファイルピッカー
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            pendingRestoreUri = uri
+            showRestoreConfirmDialog = true
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -204,6 +227,37 @@ fun AppSettingsScreen(
                     title = stringResource(R.string.layout_edit),
                     description = stringResource(R.string.edit_layout_desc),
                     onClick = onEnterEditMode
+                )
+            }
+
+            item {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            }
+
+            // バックアップ/リストア
+            item {
+                SettingsActionItem(
+                    title = stringResource(R.string.export_backup),
+                    description = stringResource(R.string.export_backup_desc),
+                    onClick = {
+                        val shareIntent = backupManager.createShareIntent()
+                        val chooser = Intent.createChooser(shareIntent, context.getString(R.string.backup_share_title))
+                        context.startActivity(chooser)
+                    }
+                )
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            item {
+                SettingsActionItem(
+                    title = stringResource(R.string.import_backup),
+                    description = stringResource(R.string.import_backup_desc),
+                    onClick = {
+                        filePickerLauncher.launch("application/json")
+                    }
                 )
             }
 
@@ -498,6 +552,74 @@ fun AppSettingsScreen(
                             }
                         )
                     }
+                }
+            }
+        )
+    }
+
+    // 復元確認ダイアログ
+    if (showRestoreConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showRestoreConfirmDialog = false
+                pendingRestoreUri = null
+            },
+            title = { Text(stringResource(R.string.restore_confirm_title)) },
+            text = { Text(stringResource(R.string.restore_confirm_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingRestoreUri?.let { uri ->
+                            val result = backupManager.restoreFromUri(uri)
+                            restoreResultMessage = when (result) {
+                                is RestoreResult.Success -> context.getString(
+                                    R.string.restore_success,
+                                    result.shortcutCount,
+                                    result.pageCount
+                                )
+                                is RestoreResult.Error -> "${context.getString(R.string.restore_error)}: ${result.message}"
+                            }
+                            showRestoreResultDialog = true
+                            if (result is RestoreResult.Success) {
+                                // 設定値を再読み込み
+                                themeMode = settingsRepository.themeMode
+                                tapMode = settingsRepository.tapMode
+                                showConfirmDialog = settingsRepository.showConfirmDialog
+                                tapFeedback = settingsRepository.tapFeedback
+                                pageCount = settingsRepository.pageCount
+                                loopPagingEnabled = settingsRepository.loopPagingEnabled
+                                onRestoreComplete()
+                            }
+                        }
+                        showRestoreConfirmDialog = false
+                        pendingRestoreUri = null
+                    }
+                ) {
+                    Text(stringResource(R.string.restore))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showRestoreConfirmDialog = false
+                        pendingRestoreUri = null
+                    }
+                ) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
+    // 復元結果ダイアログ
+    if (showRestoreResultDialog) {
+        AlertDialog(
+            onDismissRequest = { showRestoreResultDialog = false },
+            title = { Text(stringResource(R.string.restore_confirm_title)) },
+            text = { Text(restoreResultMessage ?: "") },
+            confirmButton = {
+                TextButton(onClick = { showRestoreResultDialog = false }) {
+                    Text(stringResource(R.string.close))
                 }
             }
         )

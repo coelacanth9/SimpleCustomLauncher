@@ -30,6 +30,7 @@ fun HomeHeader(
     onEditDone: () -> Unit = {},
     onAddRow: () -> Unit = {},
     onResetPage: () -> Unit = {},
+    onDeletePage: (() -> Unit)? = null,
     onLayoutEdit: () -> Unit = {},
     onAppSettings: () -> Unit = {}
 ) {
@@ -120,7 +121,7 @@ fun HomeHeader(
                 }
             }
             Spacer(modifier = Modifier.size(8.dp))
-            // 下段: ページリセット
+            // 下段: ページリセット + ページ削除
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
@@ -137,6 +138,22 @@ fun HomeHeader(
                         color = MaterialTheme.colorScheme.onErrorContainer,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     )
+                }
+                if (onDeletePage != null) {
+                    Spacer(modifier = Modifier.size(12.dp))
+                    Surface(
+                        modifier = Modifier.clickable { onDeletePage() },
+                        color = MaterialTheme.colorScheme.error,
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.delete_page),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onError,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
                 }
             }
         }

@@ -89,7 +89,9 @@ data class ShortcutPlacement(
     val row: Int,
     val column: Int,
     val spanX: Int = 1,  // 横に何セル分（今は1〜3、将来拡張可能）
-    val spanY: Int = 1   // 縦に何セル分（今は1固定、将来拡張可能）
+    val spanY: Int = 1,  // 縦に何セル分（今は1固定、将来拡張可能）
+    val backgroundColor: String? = null,  // 背景色（プレミアム機能）。nullならデフォルト色
+    val textColor: String? = null  // 文字色（プレミアム機能）。nullならデフォルト色
 )
 
 /**
@@ -99,7 +101,8 @@ data class RowConfig(
     val pageIndex: Int = 0,  // ページ番号（0始まり）
     val rowIndex: Int,
     val columns: Int = 2,  // この行の分割数（1〜3）
-    val fixedHeightDp: Int? = null  // 固定高さ（dp）。nullなら均等割り
+    val fixedHeightDp: Int? = null,  // 固定高さ（dp）。nullなら均等割り
+    val textOnly: Boolean = false  // trueの場合、アイコンなしで文字のみ表示
 )
 
 /**
@@ -191,5 +194,12 @@ data class HomeLayoutConfig(
      */
     fun getColumnsForRow(pageIndex: Int, rowIndex: Int): Int {
         return rows.find { it.pageIndex == pageIndex && it.rowIndex == rowIndex }?.columns ?: 2
+    }
+
+    /**
+     * 指定ページの指定行がテキストのみモードかどうかを取得
+     */
+    fun isTextOnlyForRow(pageIndex: Int, rowIndex: Int): Boolean {
+        return rows.find { it.pageIndex == pageIndex && it.rowIndex == rowIndex }?.textOnly ?: false
     }
 }

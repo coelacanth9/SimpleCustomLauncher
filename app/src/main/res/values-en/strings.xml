@@ -82,12 +82,21 @@
     <string name="column_2_desc">2 buttons side by side</string>
     <string name="column_3_desc">3 buttons (icons only)</string>
     <string name="delete_row">Delete this row</string>
+    <string name="delete_row_warning">All shortcuts in this row will be deleted. Continue?</string>
     <string name="cannot_add_more_rows">Cannot add more rows</string>
     <string name="column_reduce_warning">* Reducing columns will unplace overflowing shortcuts</string>
+    <string name="display_mode">Display mode</string>
+    <string name="display_mode_icon_text">Icon + Text</string>
+    <string name="display_mode_text_only">Text only</string>
+    <string name="tap_to_change">Tap to change</string>
+    <string name="background_color">Colors</string>
+    <string name="background_color_default">Default</string>
+    <string name="background_color_premium">Custom colors is a premium feature</string>
 
     <!-- Page Settings -->
     <string name="page_count_format">%d pages</string>
     <string name="delete_page">Delete this page</string>
+    <string name="delete_page_warning">All shortcuts on this page will be deleted. Continue?</string>
     <string name="add_page">Add Page</string>
     <string name="select_page_count">Select page count</string>
     <string name="page_limit_reached">This page has reached the row limit.\nAdd a new page?</string>
@@ -163,6 +172,19 @@
     <string name="font_size_xlarge">X-Large (28)</string>
     <string name="font_size_max">Maximum (32)</string>
     <string name="version">Version</string>
+
+    <!-- Backup/Restore -->
+    <string name="backup_restore">Backup / Restore</string>
+    <string name="export_backup">Export Settings</string>
+    <string name="export_backup_desc">Save layout and settings to file</string>
+    <string name="import_backup">Import Settings</string>
+    <string name="import_backup_desc">Restore layout and settings from file</string>
+    <string name="backup_share_title">Share backup file</string>
+    <string name="restore_success">Restored (Shortcuts: %1$d, Pages: %2$d)</string>
+    <string name="restore_error">Restore failed</string>
+    <string name="restore_confirm_title">Restore Backup</string>
+    <string name="restore_confirm_message">Current layout and settings will be overwritten. Continue?</string>
+    <string name="restore">Restore</string>
 
     <!-- Calendar -->
     <string name="calendar">Calendar</string>

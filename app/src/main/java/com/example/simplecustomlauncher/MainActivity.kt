@@ -277,13 +277,21 @@ fun MainLauncherScreen(
         }
 
         is MainScreenState.SlotEdit -> {
+            // refreshKeyを読み込んでデータ更新時に再計算をトリガー
+            val currentColors = remember(viewModel.refreshKey, state.pageIndex, state.row, state.column) {
+                viewModel.getPlacementColors(state.pageIndex, state.row, state.column)
+            }
             val otherPlacedShortcuts = viewModel.getPlacedShortcuts().filter { it.id != state.currentShortcut?.id }
-            val currentColumns = viewModel.getLayoutConfig().getColumnsForRow(state.pageIndex, state.row)
-            val totalPageCount = viewModel.getTotalPageCount()
+            val layoutConfig = viewModel.getLayoutConfig()
+            val currentColumns = layoutConfig.getColumnsForRow(state.pageIndex, state.row)
+            val currentTextOnly = layoutConfig.isTextOnlyForRow(state.pageIndex, state.row)
 
             SlotEditScreen(
                 currentShortcut = state.currentShortcut,
                 currentColumns = currentColumns,
+                currentTextOnly = currentTextOnly,
+                currentBackgroundColor = currentColors.first,
+                currentTextColor = currentColors.second,
                 unplacedShortcuts = viewModel.getUnplacedShortcuts(),
                 placedShortcuts = otherPlacedShortcuts,
                 onSelectUnplaced = { shortcut ->
@@ -318,16 +326,18 @@ fun MainLauncherScreen(
                     viewModel.changeRowColumns(state.pageIndex, state.row, newColumns)
                     viewModel.navigateToHome()
                 },
+                onChangeTextOnly = { textOnly ->
+                    viewModel.changeRowTextOnly(state.pageIndex, state.row, textOnly)
+                    viewModel.navigateToHome()
+                },
+                onChangeColors = { bgColor, txtColor ->
+                    viewModel.changeSlotColors(state.pageIndex, state.row, state.column, bgColor, txtColor)
+                },
                 onDeleteRow = {
                     viewModel.deleteRow(state.pageIndex, state.row)
                     viewModel.navigateToHome()
                 },
-                onDeletePage = if (totalPageCount > 1) {
-                    {
-                        viewModel.deletePage(state.pageIndex)
-                        viewModel.navigateToHome()
-                    }
-                } else null,
+                isPremium = viewModel.isPremium,
                 onBack = { viewModel.navigateToHome() }
             )
         }
@@ -361,7 +371,8 @@ fun MainLauncherScreen(
                     activity?.let { viewModel.launchPurchase(it) }
                 },
                 formattedPriceProvider = { viewModel.getFormattedPrice() },
-                isAdReadyProvider = { viewModel.isAdReady() }
+                isAdReadyProvider = { viewModel.isAdReady() },
+                onRestoreComplete = { viewModel.refresh() }
             )
         }
 

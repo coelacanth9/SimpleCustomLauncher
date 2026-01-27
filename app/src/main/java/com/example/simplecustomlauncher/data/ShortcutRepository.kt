@@ -17,22 +17,33 @@ class ShortcutRepository(private val context: Context) {
     )
     private val packageManager: PackageManager = context.packageManager
 
+    // スレッドセーフ用のロックオブジェクト
+    private val shortcutLock = Any()
+    private val placementLock = Any()
+    private val layoutLock = Any()
+
     // ===== ショートカット =====
 
     fun saveShortcut(item: ShortcutItem) {
-        val shortcuts = getAllShortcuts().toMutableMap()
-        shortcuts[item.id] = item
-        saveAllShortcuts(shortcuts.values.toList())
+        synchronized(shortcutLock) {
+            val shortcuts = getAllShortcutsInternal().toMutableMap()
+            shortcuts[item.id] = item
+            saveAllShortcuts(shortcuts.values.toList())
+        }
     }
 
     fun deleteShortcut(id: String) {
-        val shortcuts = getAllShortcuts().toMutableMap()
-        shortcuts.remove(id)
-        saveAllShortcuts(shortcuts.values.toList())
+        synchronized(shortcutLock) {
+            val shortcuts = getAllShortcutsInternal().toMutableMap()
+            shortcuts.remove(id)
+            saveAllShortcuts(shortcuts.values.toList())
+        }
 
         // 配置情報も削除
-        val placements = getAllPlacements().filter { it.shortcutId != id }
-        saveAllPlacements(placements)
+        synchronized(placementLock) {
+            val placements = getAllPlacementsInternal().filter { it.shortcutId != id }
+            saveAllPlacements(placements)
+        }
     }
 
     fun getShortcut(id: String): ShortcutItem? {
@@ -40,6 +51,12 @@ class ShortcutRepository(private val context: Context) {
     }
 
     fun getAllShortcuts(): Map<String, ShortcutItem> {
+        synchronized(shortcutLock) {
+            return getAllShortcutsInternal()
+        }
+    }
+
+    private fun getAllShortcutsInternal(): Map<String, ShortcutItem> {
         val json = prefs.getString(KEY_SHORTCUTS, null) ?: return emptyMap()
         return try {
             val array = JSONArray(json)
@@ -63,17 +80,19 @@ class ShortcutRepository(private val context: Context) {
     // ===== 配置情報 =====
 
     fun savePlacement(placement: ShortcutPlacement) {
-        val placements = getAllPlacements().toMutableList()
-        // 同じショートカットの既存配置を削除
-        placements.removeAll { it.shortcutId == placement.shortcutId }
-        // 同じ位置（ページ+行+列）の既存配置も削除（上書き）
-        placements.removeAll {
-            it.pageIndex == placement.pageIndex &&
-            it.row == placement.row &&
-            it.column == placement.column
+        synchronized(placementLock) {
+            val placements = getAllPlacementsInternal().toMutableList()
+            // 同じショートカットの既存配置を削除
+            placements.removeAll { it.shortcutId == placement.shortcutId }
+            // 同じ位置（ページ+行+列）の既存配置も削除（上書き）
+            placements.removeAll {
+                it.pageIndex == placement.pageIndex &&
+                it.row == placement.row &&
+                it.column == placement.column
+            }
+            placements.add(placement)
+            saveAllPlacements(placements)
         }
-        placements.add(placement)
-        saveAllPlacements(placements)
     }
 
     /**
@@ -84,11 +103,19 @@ class ShortcutRepository(private val context: Context) {
     }
 
     fun removePlacement(shortcutId: String) {
-        val placements = getAllPlacements().filter { it.shortcutId != shortcutId }
-        saveAllPlacements(placements)
+        synchronized(placementLock) {
+            val placements = getAllPlacementsInternal().filter { it.shortcutId != shortcutId }
+            saveAllPlacements(placements)
+        }
     }
 
     fun getAllPlacements(): List<ShortcutPlacement> {
+        synchronized(placementLock) {
+            return getAllPlacementsInternal()
+        }
+    }
+
+    private fun getAllPlacementsInternal(): List<ShortcutPlacement> {
         val json = prefs.getString(KEY_PLACEMENTS, null) ?: return emptyList()
         return try {
             val array = JSONArray(json)
@@ -107,6 +134,12 @@ class ShortcutRepository(private val context: Context) {
     // ===== レイアウト設定 =====
 
     fun saveLayoutConfig(config: HomeLayoutConfig) {
+        synchronized(layoutLock) {
+            saveLayoutConfigInternal(config)
+        }
+    }
+
+    private fun saveLayoutConfigInternal(config: HomeLayoutConfig) {
         val array = JSONArray()
         config.rows.forEach { row ->
             array.put(JSONObject().apply {
@@ -116,12 +149,19 @@ class ShortcutRepository(private val context: Context) {
                 if (row.fixedHeightDp != null) {
                     put("fixedHeightDp", row.fixedHeightDp)
                 }
+                put("textOnly", row.textOnly)
             })
         }
         prefs.edit().putString(KEY_LAYOUT, array.toString()).apply()
     }
 
     fun getLayoutConfig(): HomeLayoutConfig {
+        synchronized(layoutLock) {
+            return getLayoutConfigInternal()
+        }
+    }
+
+    private fun getLayoutConfigInternal(): HomeLayoutConfig {
         val json = prefs.getString(KEY_LAYOUT, null) ?: return HomeLayoutConfig()
         return try {
             val array = JSONArray(json)
@@ -131,7 +171,8 @@ class ShortcutRepository(private val context: Context) {
                     pageIndex = obj.optInt("pageIndex", 0),  // マイグレーション対応
                     rowIndex = obj.getInt("rowIndex"),
                     columns = obj.getInt("columns"),
-                    fixedHeightDp = if (obj.has("fixedHeightDp")) obj.getInt("fixedHeightDp") else null
+                    fixedHeightDp = if (obj.has("fixedHeightDp")) obj.getInt("fixedHeightDp") else null,
+                    textOnly = obj.optBoolean("textOnly", false)
                 )
             }
             HomeLayoutConfig(rows)
@@ -283,20 +324,27 @@ class ShortcutRepository(private val context: Context) {
      * 他のページはそのまま維持
      */
     fun clearPageLayout(pageIndex: Int) {
-        // 該当ページの配置を削除
-        val placements = getAllPlacements().filter { it.pageIndex != pageIndex }
-        saveAllPlacements(placements)
+        // 複数のデータを一貫して更新するため、順番にロックを取得
+        synchronized(placementLock) {
+            synchronized(layoutLock) {
+                synchronized(shortcutLock) {
+                    // 該当ページの配置を削除
+                    val placements = getAllPlacementsInternal().filter { it.pageIndex != pageIndex }
+                    saveAllPlacements(placements)
 
-        // 該当ページの行を削除
-        val layout = getLayoutConfig()
-        val remainingRows = layout.rows.filter { it.pageIndex != pageIndex }
-        saveLayoutConfig(HomeLayoutConfig(remainingRows))
+                    // 該当ページの行を削除
+                    val layout = getLayoutConfigInternal()
+                    val remainingRows = layout.rows.filter { it.pageIndex != pageIndex }
+                    saveLayoutConfigInternal(HomeLayoutConfig(remainingRows))
 
-        // 該当ページに配置されていたショートカットを削除（未配置にはしない）
-        // 注：他ページで使われていないショートカットのみ削除
-        val usedShortcutIds = placements.map { it.shortcutId }.toSet()
-        val shortcuts = getAllShortcuts().filter { it.key in usedShortcutIds }
-        saveAllShortcuts(shortcuts.values.toList())
+                    // 該当ページに配置されていたショートカットを削除（未配置にはしない）
+                    // 注：他ページで使われていないショートカットのみ削除
+                    val usedShortcutIds = placements.map { it.shortcutId }.toSet()
+                    val shortcuts = getAllShortcutsInternal().filter { it.key in usedShortcutIds }
+                    saveAllShortcuts(shortcuts.values.toList())
+                }
+            }
+        }
     }
 
     /**
@@ -379,6 +427,12 @@ class ShortcutRepository(private val context: Context) {
             put("column", placement.column)
             put("spanX", placement.spanX)
             put("spanY", placement.spanY)
+            if (placement.backgroundColor != null) {
+                put("backgroundColor", placement.backgroundColor)
+            }
+            if (placement.textColor != null) {
+                put("textColor", placement.textColor)
+            }
         }
     }
 
@@ -389,7 +443,9 @@ class ShortcutRepository(private val context: Context) {
             row = json.getInt("row"),
             column = json.getInt("column"),
             spanX = json.optInt("spanX", 1),
-            spanY = json.optInt("spanY", 1)
+            spanY = json.optInt("spanY", 1),
+            backgroundColor = json.optString("backgroundColor", "").takeIf { it.isNotEmpty() },
+            textColor = json.optString("textColor", "").takeIf { it.isNotEmpty() }
         )
     }
 

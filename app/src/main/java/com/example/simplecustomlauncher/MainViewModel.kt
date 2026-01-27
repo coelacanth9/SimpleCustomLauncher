@@ -404,6 +404,23 @@ class MainViewModel(
         showPageResetDialog = false
     }
 
+    // ページ削除確認ダイアログ
+    var showPageDeleteDialog by mutableStateOf(false)
+        private set
+
+    fun showPageDeleteDialogAction() {
+        showPageDeleteDialog = true
+    }
+
+    fun dismissPageDeleteDialog() {
+        showPageDeleteDialog = false
+    }
+
+    fun confirmPageDelete() {
+        deletePage(currentPageIndex)
+        showPageDeleteDialog = false
+    }
+
     // === 行追加ダイアログ ===
 
     fun showAddRowDialogAction() {
@@ -675,6 +692,58 @@ class MainViewModel(
     }
 
     /**
+     * 指定ページの指定行の表示モード（テキストのみ）を変更
+     */
+    fun changeRowTextOnly(pageIndex: Int, rowIndex: Int, textOnly: Boolean) {
+        val currentConfig = shortcutRepository.getLayoutConfig()
+
+        // レイアウト更新
+        val newRows = currentConfig.rows.map { row ->
+            if (row.pageIndex == pageIndex && row.rowIndex == rowIndex) {
+                row.copy(textOnly = textOnly)
+            } else {
+                row
+            }
+        }
+        shortcutRepository.saveLayoutConfig(HomeLayoutConfig(rows = newRows))
+        refresh()
+    }
+
+    /**
+     * 指定スロットの色セットを変更（プレミアム機能）
+     * @param backgroundColor 背景色（nullでデフォルト）
+     * @param textColor 文字色（nullでデフォルト）
+     */
+    fun changeSlotColors(pageIndex: Int, row: Int, column: Int, backgroundColor: String?, textColor: String?) {
+        val placements = shortcutRepository.getAllPlacements()
+        val targetPlacement = placements.find {
+            it.pageIndex == pageIndex && it.row == row && it.column == column
+        }
+
+        if (targetPlacement != null) {
+            // 既存の配置を更新
+            val updatedPlacement = targetPlacement.copy(
+                backgroundColor = backgroundColor,
+                textColor = textColor
+            )
+            shortcutRepository.savePlacement(updatedPlacement)
+            refresh()
+        }
+    }
+
+    /**
+     * 指定スロットの色セットを取得
+     * @return Pair(backgroundColor, textColor)
+     */
+    fun getPlacementColors(pageIndex: Int, row: Int, column: Int): Pair<String?, String?> {
+        val placements = shortcutRepository.getAllPlacements()
+        val placement = placements.find {
+            it.pageIndex == pageIndex && it.row == row && it.column == column
+        }
+        return Pair(placement?.backgroundColor, placement?.textColor)
+    }
+
+    /**
      * 指定ページを削除
      */
     fun deletePage(pageIndex: Int) {
@@ -810,7 +879,7 @@ class MainViewModel(
 
     // === ヘルパー関数 ===
 
-    private fun refresh() {
+    fun refresh() {
         refreshKey++
     }
 

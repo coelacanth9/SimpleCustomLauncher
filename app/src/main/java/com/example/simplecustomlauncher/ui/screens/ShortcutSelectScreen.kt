@@ -7,6 +7,8 @@ import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,6 +23,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
@@ -38,6 +41,7 @@ import com.example.simplecustomlauncher.data.ShortcutType
 import com.example.simplecustomlauncher.R
 import com.example.simplecustomlauncher.ui.components.ColumnOptionCard
 import com.example.simplecustomlauncher.ui.components.ContactTypeDialog
+import com.example.simplecustomlauncher.ui.components.RowDeleteConfirmDialog
 
 /**
  * 画面状態
@@ -64,6 +68,26 @@ val internalFeatures = listOf(
     InternalFeature(ShortcutType.ALL_APPS, R.string.shortcut_type_all_apps, "📱"),
     InternalFeature(ShortcutType.DATE_DISPLAY, R.string.shortcut_type_date, "📆"),
     InternalFeature(ShortcutType.TIME_DISPLAY, R.string.shortcut_type_time, "🕐")
+)
+
+/**
+ * 色セット（背景色 + 文字色）のパレット（プレミアム機能用）
+ */
+data class ColorSet(
+    val backgroundColor: String,
+    val textColor: String,
+    val name: String
+)
+
+val slotColorPalette = listOf(
+    ColorSet("#E57373", "#FFFFFF", "Red"),      // 赤 + 白文字
+    ColorSet("#FFB74D", "#000000", "Orange"),   // オレンジ + 黒文字
+    ColorSet("#FFF176", "#000000", "Yellow"),   // 黄 + 黒文字
+    ColorSet("#81C784", "#000000", "Green"),    // 緑 + 黒文字
+    ColorSet("#4FC3F7", "#000000", "Light Blue"), // 水色 + 黒文字
+    ColorSet("#64B5F6", "#FFFFFF", "Blue"),     // 青 + 白文字
+    ColorSet("#BA68C8", "#FFFFFF", "Purple"),   // 紫 + 白文字
+    ColorSet("#F06292", "#FFFFFF", "Pink")      // ピンク + 白文字
 )
 
 /**
@@ -244,6 +268,9 @@ fun ShortcutAddScreen(
 fun SlotEditScreen(
     currentShortcut: ShortcutItem?,
     currentColumns: Int,
+    currentTextOnly: Boolean = false,
+    currentBackgroundColor: String? = null,
+    currentTextColor: String? = null,
     unplacedShortcuts: List<ShortcutItem>,
     placedShortcuts: List<ShortcutItem>,
     onSelectUnplaced: (ShortcutItem) -> Unit,
@@ -254,8 +281,10 @@ fun SlotEditScreen(
     onSelectContact: (name: String, phoneNumber: String, type: ShortcutType) -> Unit = { _, _, _ -> },
     onClear: () -> Unit,
     onChangeColumns: (Int) -> Unit,
+    onChangeTextOnly: (Boolean) -> Unit = {},
+    onChangeColors: (backgroundColor: String?, textColor: String?) -> Unit = { _, _ -> },
     onDeleteRow: () -> Unit,
-    onDeletePage: (() -> Unit)? = null,
+    isPremium: Boolean = false,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -264,9 +293,21 @@ fun SlotEditScreen(
     // 連絡先ピッカー（カスタムフック使用）
     val contactPicker = rememberContactPicker { /* not used here */ }
     var showColumnsDialog by remember { mutableStateOf(false) }
+    var showDeleteRowDialog by remember { mutableStateOf(false) }
 
     var screenState by remember { mutableStateOf<SelectScreenState>(SelectScreenState.Main) }
     var shortcuts by remember { mutableStateOf<List<ShortcutData>>(emptyList()) }
+
+    // 行削除確認ダイアログ
+    if (showDeleteRowDialog) {
+        RowDeleteConfirmDialog(
+            onConfirm = {
+                showDeleteRowDialog = false
+                onDeleteRow()
+            },
+            onDismiss = { showDeleteRowDialog = false }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -301,6 +342,9 @@ fun SlotEditScreen(
                 SlotEditMainContent(
                     currentShortcut = currentShortcut,
                     currentColumns = currentColumns,
+                    currentTextOnly = currentTextOnly,
+                    currentBackgroundColor = currentBackgroundColor,
+                    currentTextColor = currentTextColor,
                     unplacedShortcuts = unplacedShortcuts,
                     placedShortcuts = placedShortcuts,
                     onSelectUnplaced = onSelectUnplaced,
@@ -310,8 +354,10 @@ fun SlotEditScreen(
                     onContactPicker = contactPicker.startPicker,
                     onClear = onClear,
                     onShowColumnsDialog = { showColumnsDialog = true },
-                    onDeleteRow = onDeleteRow,
-                    onDeletePage = onDeletePage,
+                    onChangeTextOnly = onChangeTextOnly,
+                    onChangeColors = onChangeColors,
+                    onDeleteRow = { showDeleteRowDialog = true },
+                    isPremium = isPremium,
                     modifier = Modifier.padding(paddingValues)
                 )
             }
@@ -492,6 +538,9 @@ private fun MainSelectContent(
 private fun SlotEditMainContent(
     currentShortcut: ShortcutItem?,
     currentColumns: Int,
+    currentTextOnly: Boolean = false,
+    currentBackgroundColor: String? = null,
+    currentTextColor: String? = null,
     unplacedShortcuts: List<ShortcutItem>,
     placedShortcuts: List<ShortcutItem>,
     onSelectUnplaced: (ShortcutItem) -> Unit,
@@ -501,8 +550,10 @@ private fun SlotEditMainContent(
     onContactPicker: () -> Unit,
     onClear: () -> Unit,
     onShowColumnsDialog: () -> Unit,
+    onChangeTextOnly: (Boolean) -> Unit = {},
+    onChangeColors: (backgroundColor: String?, textColor: String?) -> Unit = { _, _ -> },
     onDeleteRow: () -> Unit,
-    onDeletePage: (() -> Unit)? = null,
+    isPremium: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -542,8 +593,44 @@ private fun SlotEditMainContent(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
+        // 表示モード切替（文字のみ/アイコン+文字）
+        item {
+            DisplayModeCard(
+                textOnly = currentTextOnly,
+                onToggle = { onChangeTextOnly(!currentTextOnly) }
+            )
+        }
+
+        // 色セット選択（プレミアム機能）
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+        item {
+            ColorSetCard(
+                currentBackgroundColor = currentBackgroundColor,
+                currentTextColor = currentTextColor,
+                isPremium = isPremium,
+                onSelectColors = onChangeColors
+            )
+        }
+
+        // この行の分割数を変更
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+        item {
+            ActionCard(
+                text = stringResource(R.string.current_column_count, currentColumns),
+                color = MaterialTheme.colorScheme.primary,
+                onClick = onShowColumnsDialog
+            )
+        }
+
         // スロットを空にする
         if (currentShortcut != null && currentShortcut.type != ShortcutType.EMPTY) {
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
             item {
                 ActionCard(
                     text = stringResource(R.string.clear_slot),
@@ -551,18 +638,6 @@ private fun SlotEditMainContent(
                     onClick = onClear
                 )
             }
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-        }
-
-        // この行の分割数を変更
-        item {
-            ActionCard(
-                text = stringResource(R.string.current_column_count, currentColumns),
-                color = MaterialTheme.colorScheme.primary,
-                onClick = onShowColumnsDialog
-            )
         }
 
         // この行を削除
@@ -575,20 +650,6 @@ private fun SlotEditMainContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 onClick = onDeleteRow
             )
-        }
-
-        // このページを削除（2ページ以上の場合のみ）
-        if (onDeletePage != null) {
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            item {
-                ActionCard(
-                    text = stringResource(R.string.delete_page),
-                    color = MaterialTheme.colorScheme.error,
-                    onClick = onDeletePage
-                )
-            }
         }
 
         item { Spacer(modifier = Modifier.height(32.dp)) }
@@ -1038,6 +1099,188 @@ private fun ActionCard(
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 color = color
+            )
+        }
+    }
+}
+
+@Composable
+private fun DisplayModeCard(
+    textOnly: Boolean,
+    onToggle: () -> Unit
+) {
+    val color = MaterialTheme.colorScheme.tertiary
+    val modeText = if (textOnly) {
+        stringResource(R.string.display_mode_text_only)
+    } else {
+        stringResource(R.string.display_mode_icon_text)
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onToggle),
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.1f)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = stringResource(R.string.display_mode),
+                    fontSize = 14.sp,
+                    color = color.copy(alpha = 0.7f)
+                )
+                Text(
+                    text = modeText,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = color
+                )
+            }
+            Text(
+                text = stringResource(R.string.tap_to_change),
+                fontSize = 12.sp,
+                color = color.copy(alpha = 0.7f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ColorSetCard(
+    currentBackgroundColor: String?,
+    currentTextColor: String?,
+    isPremium: Boolean,
+    onSelectColors: (backgroundColor: String?, textColor: String?) -> Unit
+) {
+    val themeColor = MaterialTheme.colorScheme.tertiary
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = themeColor.copy(alpha = 0.1f)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.background_color),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = themeColor
+                )
+                Text(
+                    text = "Premium",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (isPremium) {
+                // 色セットパレット（2行に分けて表示）
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    // デフォルト（リセット）
+                    ColorSetButton(
+                        colorSet = null,
+                        isSelected = currentBackgroundColor == null,
+                        onClick = { onSelectColors(null, null) }
+                    )
+                    // カラーパレット前半
+                    slotColorPalette.take(4).forEach { colorSet ->
+                        ColorSetButton(
+                            colorSet = colorSet,
+                            isSelected = currentBackgroundColor == colorSet.backgroundColor,
+                            onClick = { onSelectColors(colorSet.backgroundColor, colorSet.textColor) }
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    // カラーパレット後半
+                    slotColorPalette.drop(4).forEach { colorSet ->
+                        ColorSetButton(
+                            colorSet = colorSet,
+                            isSelected = currentBackgroundColor == colorSet.backgroundColor,
+                            onClick = { onSelectColors(colorSet.backgroundColor, colorSet.textColor) }
+                        )
+                    }
+                    // 空白で揃える
+                    Spacer(modifier = Modifier.size(44.dp))
+                }
+            } else {
+                // プレミアム未購入時
+                Text(
+                    text = stringResource(R.string.background_color_premium),
+                    fontSize = 14.sp,
+                    color = themeColor.copy(alpha = 0.7f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColorSetButton(
+    colorSet: ColorSet?,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val bgColor = if (colorSet != null) {
+        Color(android.graphics.Color.parseColor(colorSet.backgroundColor))
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+    val txtColor = if (colorSet != null) {
+        Color(android.graphics.Color.parseColor(colorSet.textColor))
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Box(
+        modifier = Modifier
+            .size(width = 44.dp, height = 36.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(bgColor)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = if (colorSet == null) "×" else "Aa",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = txtColor
+        )
+        // 選択中は赤丸表示
+        if (isSelected) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(2.dp)
+                    .size(10.dp)
+                    .clip(RoundedCornerShape(5.dp))
+                    .background(Color.Red)
             )
         }
     }
