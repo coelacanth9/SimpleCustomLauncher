@@ -77,6 +77,10 @@ class MainActivity : ComponentActivity() {
             onPurchaseComplete = {
                 // 購入完了時にPremiumManagerを更新
                 premiumManager.recordPurchase()
+            },
+            onPurchaseCleared = {
+                // 払い戻し等で購入がクリアされた時
+                premiumManager.clearPurchase()
             }
         )
         billingManager.initialize()

@@ -46,6 +46,11 @@ interface PremiumManager {
     fun recordPurchase()
 
     /**
+     * 買い切り購入をクリア（払い戻し時）
+     */
+    fun clearPurchase()
+
+    /**
      * サブスクリプション状態を更新
      */
     fun updateSubscriptionStatus(isActive: Boolean)
@@ -113,6 +118,12 @@ class DefaultPremiumManager(
     override fun recordPurchase() {
         prefs.edit()
             .putBoolean(KEY_ONE_TIME_PURCHASE, true)
+            .apply()
+    }
+
+    override fun clearPurchase() {
+        prefs.edit()
+            .putBoolean(KEY_ONE_TIME_PURCHASE, false)
             .apply()
     }
 

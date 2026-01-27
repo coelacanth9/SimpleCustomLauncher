@@ -20,7 +20,8 @@ import kotlinx.coroutines.launch
  */
 class BillingManager(
     private val context: Context,
-    private val onPurchaseComplete: () -> Unit
+    private val onPurchaseComplete: () -> Unit,
+    private val onPurchaseCleared: () -> Unit = {}
 ) : PurchasesUpdatedListener {
 
     companion object {
@@ -162,6 +163,11 @@ class BillingManager(
                     if (!premiumPurchase.isAcknowledged) {
                         acknowledgePurchase(premiumPurchase)
                     }
+                } else {
+                    // 購入が見つからない（払い戻し等）
+                    Log.d(TAG, "No premium purchase found, clearing local state...")
+                    _isPurchased.value = false
+                    onPurchaseCleared()
                 }
             } else {
                 Log.e(TAG, "restorePurchases failed: ${result.debugMessage}")
