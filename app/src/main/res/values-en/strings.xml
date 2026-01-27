@@ -172,6 +172,8 @@
     <string name="font_size_xlarge">X-Large (28)</string>
     <string name="font_size_max">Maximum (32)</string>
     <string name="version">Version</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="privacy_policy_desc">How we handle your information</string>
 
     <!-- Backup/Restore -->
     <string name="backup_restore">Backup / Restore</string>

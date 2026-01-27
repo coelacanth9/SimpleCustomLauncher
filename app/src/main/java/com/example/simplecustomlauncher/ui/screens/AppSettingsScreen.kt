@@ -290,6 +290,22 @@ fun AppSettingsScreen(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
 
+            // プライバシーポリシー
+            item {
+                SettingsActionItem(
+                    title = stringResource(R.string.privacy_policy),
+                    description = stringResource(R.string.privacy_policy_desc),
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/coelacanth9/SimpleCustomLauncher/blob/master/PRIVACY_POLICY.md"))
+                        context.startActivity(intent)
+                    }
+                )
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             // バージョン情報
             item {
                 SettingsInfoItem(
