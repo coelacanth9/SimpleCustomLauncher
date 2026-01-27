@@ -22,6 +22,8 @@ val itemMapping = mapOf(
     "電話" to ItemDef(ShortcutType.DIALER, R.string.shortcut_type_phone),
     "メモ帳" to ItemDef(ShortcutType.MEMO, R.string.shortcut_type_memo),
     "カレンダー" to ItemDef(ShortcutType.CALENDAR, R.string.shortcut_type_calendar),
+    "日付" to ItemDef(ShortcutType.DATE_DISPLAY, R.string.shortcut_type_date),
+    "時計" to ItemDef(ShortcutType.TIME_DISPLAY, R.string.shortcut_type_time),
 
     // よく使うアプリ
     "フォト" to ItemDef(ShortcutType.APP, R.string.app_photos, listOf("com.google.android.apps.photos")),
@@ -40,8 +42,11 @@ val itemMapping = mapOf(
 /**
  * デフォルトのレイアウト配置
  * 行ごとのリスト、要素数がそのまま列数になる
+ * 日付・時計行は固定高さで表示される
  */
 val defaultLayout = listOf(
+    listOf("日付"),
+    listOf("時計"),
     listOf("電話", "メモ帳"),
     listOf("フォト", "Google", "連絡先"),
     listOf("カレンダー"),

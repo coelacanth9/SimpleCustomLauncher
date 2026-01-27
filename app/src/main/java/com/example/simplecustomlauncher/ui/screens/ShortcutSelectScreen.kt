@@ -61,7 +61,9 @@ val internalFeatures = listOf(
     InternalFeature(ShortcutType.CALENDAR, R.string.shortcut_type_calendar, "📅"),
     InternalFeature(ShortcutType.MEMO, R.string.shortcut_type_memo, "📝"),
     InternalFeature(ShortcutType.DIALER, R.string.shortcut_type_phone, "📞"),
-    InternalFeature(ShortcutType.ALL_APPS, R.string.shortcut_type_all_apps, "📱")
+    InternalFeature(ShortcutType.ALL_APPS, R.string.shortcut_type_all_apps, "📱"),
+    InternalFeature(ShortcutType.DATE_DISPLAY, R.string.shortcut_type_date, "📆"),
+    InternalFeature(ShortcutType.TIME_DISPLAY, R.string.shortcut_type_time, "🕐")
 )
 
 /**
@@ -902,6 +904,8 @@ private fun ShortcutCard(
                     ShortcutType.MEMO -> "📝"
                     ShortcutType.SETTINGS -> "⚙️"
                     ShortcutType.ALL_APPS -> "📱"
+                    ShortcutType.DATE_DISPLAY -> "📆"
+                    ShortcutType.TIME_DISPLAY -> "🕐"
                     ShortcutType.EMPTY -> ""
                 },
                 fontSize = 24.sp

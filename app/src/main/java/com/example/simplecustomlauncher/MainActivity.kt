@@ -15,10 +15,13 @@ import androidx.compose.material3.Surface
 import com.example.simplecustomlauncher.ui.theme.SimpleCustomLauncherTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.example.simplecustomlauncher.billing.PurchaseState
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -176,6 +179,14 @@ fun MainLauncherScreen(
     val viewModel: MainViewModel = viewModel(
         factory = MainViewModelFactory(context, billingManager, adManager)
     )
+
+    // 購入完了を監視
+    val purchaseState by billingManager.purchaseState.collectAsState()
+    LaunchedEffect(purchaseState) {
+        if (purchaseState == PurchaseState.Purchased) {
+            viewModel.onPurchaseCompleted()
+        }
+    }
 
     // ライフサイクル監視（onResumeでプレミアム状態を再チェック）
     val lifecycleOwner = LocalLifecycleOwner.current

@@ -203,6 +203,8 @@ private fun ShortcutListItem(
                     ShortcutType.MEMO -> "📝"
                     ShortcutType.SETTINGS -> "⚙️"
                     ShortcutType.ALL_APPS -> "📱"
+                    ShortcutType.DATE_DISPLAY -> "📆"
+                    ShortcutType.TIME_DISPLAY -> "🕐"
                     ShortcutType.EMPTY -> ""
                     ShortcutType.DIALER -> "📞"
                 },

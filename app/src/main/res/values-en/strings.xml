@@ -48,6 +48,8 @@
     <string name="shortcut_type_all_apps">All Apps</string>
     <string name="shortcut_type_call">Make a call</string>
     <string name="shortcut_type_sms">Send SMS</string>
+    <string name="shortcut_type_date">Date</string>
+    <string name="shortcut_type_time">Clock</string>
 
     <!-- Shortcut Add/Edit Screen -->
     <string name="add_shortcut">Add Shortcut</string>
@@ -129,10 +131,12 @@
     <string name="edit_layout_desc">Change app arrangement</string>
     <string name="reset_to_default">Reset to Default</string>
     <string name="reset_to_default_short">Reset to default</string>
-    <string name="clear_layout">Clear Layout</string>
-    <string name="clear_layout_warning">All rows and shortcuts will be deleted. This cannot be undone. Continue?</string>
-    <string name="clear_layout_desc">All rows and placements will be deleted</string>
-    <string name="clear_confirm_message">All rows and shortcuts will be deleted. This cannot be undone. Continue?</string>
+    <string name="clear_layout">Clear All Pages</string>
+    <string name="clear_layout_warning">All rows and shortcuts on all pages will be deleted. This cannot be undone. Continue?</string>
+    <string name="clear_layout_desc">All rows and placements on all pages will be deleted</string>
+    <string name="clear_confirm_message">All rows and shortcuts on all pages will be deleted. This cannot be undone. Continue?</string>
+    <string name="reset_page">Reset This Page</string>
+    <string name="reset_page_warning">All rows and shortcuts on this page will be deleted. Continue?</string>
     <string name="reset_layout_warning">Current layout will be cleared and reset to default. This cannot be undone. Continue?</string>
     <string name="reset_layout_desc">Layout will be reset to default</string>
     <string name="reset_confirm_message">Current layout will be cleared and reset to default. This cannot be undone. Continue?</string>

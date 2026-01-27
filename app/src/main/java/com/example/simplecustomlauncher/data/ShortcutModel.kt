@@ -16,6 +16,8 @@ enum class ShortcutType {
     MEMO,           // アプリ内メモ帳
     SETTINGS,       // アプリ設定
     ALL_APPS,       // すべてのアプリ（アプリ一覧）
+    DATE_DISPLAY,   // 日付表示
+    TIME_DISPLAY,   // 時計表示
     EMPTY           // 空きスロット
 }
 
@@ -70,6 +72,8 @@ data class ShortcutItem(
             ShortcutType.MEMO -> null
             ShortcutType.SETTINGS -> null
             ShortcutType.ALL_APPS -> null
+            ShortcutType.DATE_DISPLAY -> null
+            ShortcutType.TIME_DISPLAY -> null
             ShortcutType.EMPTY -> null
         }
     }
@@ -94,7 +98,8 @@ data class ShortcutPlacement(
 data class RowConfig(
     val pageIndex: Int = 0,  // ページ番号（0始まり）
     val rowIndex: Int,
-    val columns: Int = 2  // この行の分割数（1〜3）
+    val columns: Int = 2,  // この行の分割数（1〜3）
+    val fixedHeightDp: Int? = null  // 固定高さ（dp）。nullなら均等割り
 )
 
 /**

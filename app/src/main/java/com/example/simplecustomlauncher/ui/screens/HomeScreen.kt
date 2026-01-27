@@ -43,7 +43,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -75,6 +82,7 @@ import com.example.simplecustomlauncher.ui.components.AddPageConfirmDialog
 import com.example.simplecustomlauncher.ui.components.AddRowDialog
 import com.example.simplecustomlauncher.ui.components.EditModeConfirmDialog
 import com.example.simplecustomlauncher.ui.components.PageIndicator
+import com.example.simplecustomlauncher.ui.components.PageResetConfirmDialog
 import com.example.simplecustomlauncher.ui.components.PremiumLockOverlay
 import com.example.simplecustomlauncher.ui.components.PremiumRequiredForPageDialog
 import com.example.simplecustomlauncher.ui.components.ShortcutConfirmDialog
@@ -93,6 +101,8 @@ fun getLocalizedLabel(item: ShortcutItem): String {
         ShortcutType.SETTINGS -> stringResource(R.string.settings)
         ShortcutType.DIALER -> stringResource(R.string.shortcut_type_phone)
         ShortcutType.ALL_APPS -> stringResource(R.string.shortcut_type_all_apps)
+        ShortcutType.DATE_DISPLAY -> stringResource(R.string.shortcut_type_date)
+        ShortcutType.TIME_DISPLAY -> stringResource(R.string.shortcut_type_time)
         ShortcutType.APP -> {
             // パッケージ名から現在のロケールでアプリ名を取得
             item.packageName?.let { pkg ->
@@ -157,6 +167,8 @@ fun HomeScreen(
                 isEditMode = viewModel.isEditMode,
                 onEditDone = { viewModel.exitEditMode() },
                 onAddRow = { viewModel.showAddRowDialogAction() },
+                onResetPage = { viewModel.showPageResetDialogAction() },
+                onLayoutEdit = { viewModel.showEditModeConfirmDialog() },
                 onAppSettings = { viewModel.navigateTo(MainScreenState.AppSettings) }
             )
 
@@ -208,10 +220,19 @@ fun HomeScreen(
 
     // プレミアム誘導ダイアログ（ページ追加時）
     if (viewModel.showPremiumRequiredForPageDialog) {
+        val activity = context as? android.app.Activity
         PremiumRequiredForPageDialog(
-            onWatchAd = { viewModel.watchAdAndAddPage() },
-            onPurchase = { viewModel.purchaseAndAddPage() },
+            onWatchAd = { activity?.let { viewModel.watchAdAndAddPage(it) } },
+            onPurchase = { activity?.let { viewModel.purchaseAndAddPage(it) } },
             onDismiss = { viewModel.dismissPremiumRequiredForPageDialog() }
+        )
+    }
+
+    // ページリセット確認ダイアログ
+    if (viewModel.showPageResetDialog) {
+        PageResetConfirmDialog(
+            onConfirm = { viewModel.confirmPageReset() },
+            onDismiss = { viewModel.dismissPageResetDialog() }
         )
     }
 }
@@ -374,13 +395,25 @@ private fun HomePageContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         pageRows.forEach { rowConfig ->
+            val rowPlacements = placementsByRow[rowConfig.rowIndex] ?: emptyList()
+
+            // 行内のショートカットタイプから固定高さを計算
+            val dynamicFixedHeight = rowConfig.fixedHeightDp ?: run {
+                val rowShortcuts = rowPlacements.mapNotNull { shortcuts[it.shortcutId] }
+                when {
+                    rowShortcuts.any { it.type == ShortcutType.TIME_DISPLAY } -> 80
+                    rowShortcuts.any { it.type == ShortcutType.DATE_DISPLAY } -> 56
+                    else -> null
+                }
+            }
+
             HomeRow(
                 rowConfig = rowConfig,
-                placements = placementsByRow[rowConfig.rowIndex] ?: emptyList(),
+                placements = rowPlacements,
                 shortcuts = shortcuts,
                 isEditMode = viewModel.isEditMode,
                 tapMode = tapMode,
@@ -408,7 +441,11 @@ private fun HomePageContent(
                     performFeedback()
                     viewModel.navigateToSlotEdit(pageIndex, row, column, currentShortcut)
                 },
-                modifier = Modifier.weight(1f)
+                modifier = if (dynamicFixedHeight != null) {
+                    Modifier.height(dynamicFixedHeight.dp)
+                } else {
+                    Modifier.weight(1f)
+                }
             )
         }
     }
@@ -437,19 +474,45 @@ private fun HomeRow(
 
             Box(modifier = Modifier.weight(1f)) {
                 if (shortcut != null && shortcut.type != ShortcutType.EMPTY) {
-                    ShortcutButton(
-                        item = shortcut,
-                        columns = rowConfig.columns,
-                        isEditMode = isEditMode,
-                        tapMode = tapMode,
-                        onClick = {
-                            if (isEditMode) {
-                                onSlotClickInEditMode(rowConfig.rowIndex, colIndex, shortcut)
-                            } else {
-                                onShortcutClick(shortcut)
-                            }
+                    when (shortcut.type) {
+                        ShortcutType.DATE_DISPLAY -> {
+                            DateDisplayButton(
+                                isEditMode = isEditMode,
+                                tapMode = tapMode,
+                                onClick = {
+                                    if (isEditMode) {
+                                        onSlotClickInEditMode(rowConfig.rowIndex, colIndex, shortcut)
+                                    }
+                                }
+                            )
                         }
-                    )
+                        ShortcutType.TIME_DISPLAY -> {
+                            TimeDisplayButton(
+                                isEditMode = isEditMode,
+                                tapMode = tapMode,
+                                onClick = {
+                                    if (isEditMode) {
+                                        onSlotClickInEditMode(rowConfig.rowIndex, colIndex, shortcut)
+                                    }
+                                }
+                            )
+                        }
+                        else -> {
+                            ShortcutButton(
+                                item = shortcut,
+                                columns = rowConfig.columns,
+                                isEditMode = isEditMode,
+                                tapMode = tapMode,
+                                onClick = {
+                                    if (isEditMode) {
+                                        onSlotClickInEditMode(rowConfig.rowIndex, colIndex, shortcut)
+                                    } else {
+                                        onShortcutClick(shortcut)
+                                    }
+                                }
+                            )
+                        }
+                    }
                 } else {
                     EmptySlotButton(
                         isEditMode = isEditMode,
@@ -686,6 +749,8 @@ private fun ShortcutIcon(
         ShortcutType.ALL_APPS -> {
             Icon(Icons.Default.Apps, stringResource(R.string.shortcut_type_all_apps), Modifier.size(size), MaterialTheme.colorScheme.primary)
         }
+        ShortcutType.DATE_DISPLAY -> { /* 専用コンポーネントで表示 */ }
+        ShortcutType.TIME_DISPLAY -> { /* 専用コンポーネントで表示 */ }
         ShortcutType.EMPTY -> { }
     }
 }
@@ -722,6 +787,153 @@ private fun EmptySlotButton(
                 modifier = Modifier.size(36.dp),
                 tint = MaterialTheme.colorScheme.outline
             )
+        }
+    }
+}
+
+/**
+ * 日付表示ボタン
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun DateDisplayButton(
+    isEditMode: Boolean,
+    tapMode: TapMode,
+    onClick: () -> Unit
+) {
+    val context = LocalContext.current
+    val repository = remember { com.example.simplecustomlauncher.CalendarRepository(context) }
+
+    var currentDateTime by remember { mutableStateOf(LocalDateTime.now()) }
+
+    // 1分ごとに更新（日付なので秒単位は不要）
+    LaunchedEffect(Unit) {
+        while (true) {
+            currentDateTime = LocalDateTime.now()
+            delay(60_000)
+        }
+    }
+
+    val datePattern = stringResource(R.string.date_format)
+    val dateFormatter = DateTimeFormatter.ofPattern(datePattern, Locale.getDefault())
+
+    // 祝日名を取得
+    val holidayName = remember(currentDateTime.toLocalDate()) {
+        repository.getHolidayName(currentDateTime.toLocalDate())
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxSize()
+            .then(
+                if (isEditMode) Modifier
+                    .tapModeClickable(true, tapMode, onClick)
+                    .border(
+                        width = 3.dp,
+                        color = MaterialTheme.colorScheme.secondary,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                else Modifier
+            ),
+        colors = CardDefaults.cardColors(containerColor = AppTheme.extendedColors.cardBackground),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = currentDateTime.format(dateFormatter),
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                if (holidayName != null) {
+                    Text(
+                        text = holidayName,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                if (isEditMode) {
+                    Text(
+                        text = stringResource(R.string.tap_to_edit),
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 時計表示ボタン
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun TimeDisplayButton(
+    isEditMode: Boolean,
+    tapMode: TapMode,
+    onClick: () -> Unit
+) {
+    var currentDateTime by remember { mutableStateOf(LocalDateTime.now()) }
+
+    // 1秒ごとに更新
+    LaunchedEffect(Unit) {
+        while (true) {
+            currentDateTime = LocalDateTime.now()
+            delay(1000)
+        }
+    }
+
+    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+    Card(
+        modifier = Modifier
+            .fillMaxSize()
+            .then(
+                if (isEditMode) Modifier
+                    .tapModeClickable(true, tapMode, onClick)
+                    .border(
+                        width = 3.dp,
+                        color = MaterialTheme.colorScheme.secondary,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                else Modifier
+            ),
+        colors = CardDefaults.cardColors(containerColor = AppTheme.extendedColors.cardBackground),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = currentDateTime.format(timeFormatter),
+                    fontSize = 48.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                if (isEditMode) {
+                    Text(
+                        text = stringResource(R.string.tap_to_edit),
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
         }
     }
 }

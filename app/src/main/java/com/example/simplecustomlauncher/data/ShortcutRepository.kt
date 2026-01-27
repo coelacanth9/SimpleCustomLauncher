@@ -113,6 +113,9 @@ class ShortcutRepository(private val context: Context) {
                 put("pageIndex", row.pageIndex)
                 put("rowIndex", row.rowIndex)
                 put("columns", row.columns)
+                if (row.fixedHeightDp != null) {
+                    put("fixedHeightDp", row.fixedHeightDp)
+                }
             })
         }
         prefs.edit().putString(KEY_LAYOUT, array.toString()).apply()
@@ -127,7 +130,8 @@ class ShortcutRepository(private val context: Context) {
                 RowConfig(
                     pageIndex = obj.optInt("pageIndex", 0),  // マイグレーション対応
                     rowIndex = obj.getInt("rowIndex"),
-                    columns = obj.getInt("columns")
+                    columns = obj.getInt("columns"),
+                    fixedHeightDp = if (obj.has("fixedHeightDp")) obj.getInt("fixedHeightDp") else null
                 )
             }
             HomeLayoutConfig(rows)
@@ -211,9 +215,10 @@ class ShortcutRepository(private val context: Context) {
             .remove(KEY_LAYOUT)
             .apply()
 
-        // レイアウト設定を生成
+        // レイアウト設定を生成（日付・時計行は固定高さ）
         val rows = defaultLayout.mapIndexed { index, row ->
-            RowConfig(rowIndex = index, columns = row.size)
+            val fixedHeight = getFixedHeightForRow(row)
+            RowConfig(rowIndex = index, columns = row.size, fixedHeightDp = fixedHeight)
         }
         saveLayoutConfig(HomeLayoutConfig(rows))
 
@@ -239,6 +244,21 @@ class ShortcutRepository(private val context: Context) {
     }
 
     /**
+     * 行に固定高さが必要かどうかを判定
+     * 日付・時計表示は固定高さを返す
+     */
+    private fun getFixedHeightForRow(row: List<String>): Int? {
+        val hasDateDisplay = row.any { itemMapping[it]?.type == ShortcutType.DATE_DISPLAY }
+        val hasTimeDisplay = row.any { itemMapping[it]?.type == ShortcutType.TIME_DISPLAY }
+
+        return when {
+            hasTimeDisplay -> 80  // 時計は大きめ
+            hasDateDisplay -> 56  // 日付は少し小さめ
+            else -> null
+        }
+    }
+
+    /**
      * 初期状態に戻す
      */
     fun resetToDefault() {
@@ -256,6 +276,27 @@ class ShortcutRepository(private val context: Context) {
             .apply()
         // 空のレイアウトを保存
         saveLayoutConfig(HomeLayoutConfig(rows = emptyList()))
+    }
+
+    /**
+     * 指定ページのレイアウトをクリア（行と配置を削除）
+     * 他のページはそのまま維持
+     */
+    fun clearPageLayout(pageIndex: Int) {
+        // 該当ページの配置を削除
+        val placements = getAllPlacements().filter { it.pageIndex != pageIndex }
+        saveAllPlacements(placements)
+
+        // 該当ページの行を削除
+        val layout = getLayoutConfig()
+        val remainingRows = layout.rows.filter { it.pageIndex != pageIndex }
+        saveLayoutConfig(HomeLayoutConfig(remainingRows))
+
+        // 該当ページに配置されていたショートカットを削除（未配置にはしない）
+        // 注：他ページで使われていないショートカットのみ削除
+        val usedShortcutIds = placements.map { it.shortcutId }.toSet()
+        val shortcuts = getAllShortcuts().filter { it.key in usedShortcutIds }
+        saveAllShortcuts(shortcuts.values.toList())
     }
 
     /**

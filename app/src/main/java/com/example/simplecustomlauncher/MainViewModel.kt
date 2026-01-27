@@ -126,6 +126,21 @@ class MainViewModel(
         billingManager?.launchPurchaseFlow(activity)
     }
 
+    // ページ追加待ちフラグ（購入完了後にページ追加する）
+    private var pendingAddPageAfterPurchase = false
+
+    /**
+     * 購入完了時のコールバック（MainActivityから呼ばれる）
+     */
+    fun onPurchaseCompleted() {
+        isPremium = premiumManager.isPremiumActive()
+        if (pendingAddPageAfterPurchase) {
+            pendingAddPageAfterPurchase = false
+            confirmAddPageWithRow()
+        }
+        refresh()
+    }
+
     /**
      * 購入を復元
      */
@@ -367,6 +382,28 @@ class MainViewModel(
         refresh()
     }
 
+    fun clearCurrentPageLayout() {
+        shortcutRepository.clearPageLayout(currentPageIndex)
+        refresh()
+    }
+
+    // ページリセット確認ダイアログ
+    var showPageResetDialog by mutableStateOf(false)
+        private set
+
+    fun showPageResetDialogAction() {
+        showPageResetDialog = true
+    }
+
+    fun dismissPageResetDialog() {
+        showPageResetDialog = false
+    }
+
+    fun confirmPageReset() {
+        clearCurrentPageLayout()
+        showPageResetDialog = false
+    }
+
     // === 行追加ダイアログ ===
 
     fun showAddRowDialogAction() {
@@ -391,7 +428,7 @@ class MainViewModel(
         val currentConfig = shortcutRepository.getLayoutConfig()
         val pageRows = currentConfig.getRowsForPage(pageIndex)
 
-        // 行数上限チェック（1ページあたり最大5行）
+        // 行数上限チェック（1ページあたり最大7行）
         if (pageRows.size >= MAX_ROWS_PER_PAGE) {
             val currentPageCount = settingsRepository.pageCount
             if (currentPageCount < SettingsRepository.MAX_PAGES) {
@@ -442,21 +479,23 @@ class MainViewModel(
     /**
      * 動画視聴でプレミアム解除してページ追加
      */
-    fun watchAdAndAddPage() {
-        premiumManager.recordAdWatch()
+    fun watchAdAndAddPage(activity: Activity) {
         showPremiumRequiredForPageDialog = false
-        // プレミアム有効になったのでページ追加を実行
-        confirmAddPageWithRow()
+        adManager?.showRewardedAd(activity) {
+            // 報酬獲得時の処理
+            recordAdWatch()
+            // ページ追加を実行
+            confirmAddPageWithRow()
+        }
     }
 
     /**
      * 課金でプレミアム解除してページ追加
      */
-    fun purchaseAndAddPage() {
-        premiumManager.recordPurchase()
+    fun purchaseAndAddPage(activity: Activity) {
         showPremiumRequiredForPageDialog = false
-        // プレミアム有効になったのでページ追加を実行
-        confirmAddPageWithRow()
+        pendingAddPageAfterPurchase = true
+        billingManager?.launchPurchaseFlow(activity)
     }
 
     // ページ遷移リクエスト（UIが監視して遷移する）
@@ -500,7 +539,7 @@ class MainViewModel(
     }
 
     companion object {
-        const val MAX_ROWS_PER_PAGE = 5
+        const val MAX_ROWS_PER_PAGE = 7
     }
 
     // === ショートカット確認ダイアログ ===
@@ -729,6 +768,8 @@ class MainViewModel(
                 ShortcutType.MEMO -> navigateTo(MainScreenState.Memo)
                 ShortcutType.SETTINGS -> navigateTo(MainScreenState.AppSettings)
                 ShortcutType.ALL_APPS -> navigateTo(MainScreenState.AllApps)
+                ShortcutType.DATE_DISPLAY -> { /* 表示のみ、アクションなし */ }
+                ShortcutType.TIME_DISPLAY -> { /* 表示のみ、アクションなし */ }
                 ShortcutType.EMPTY -> { /* 何もしない */ }
             }
         } catch (e: Exception) {

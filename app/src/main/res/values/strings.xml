@@ -48,6 +48,8 @@
     <string name="shortcut_type_all_apps">すべてのアプリ</string>
     <string name="shortcut_type_call">電話をかける</string>
     <string name="shortcut_type_sms">SMSを送る</string>
+    <string name="shortcut_type_date">日付</string>
+    <string name="shortcut_type_time">時計</string>
 
     <!-- Shortcut Add/Edit Screen -->
     <string name="add_shortcut">ショートカットを追加</string>
@@ -129,10 +131,12 @@
     <string name="edit_layout_desc">アプリの配置を変更します</string>
     <string name="reset_to_default">初期状態にリセット</string>
     <string name="reset_to_default_short">初期状態に戻す</string>
-    <string name="clear_layout">レイアウトをクリア</string>
-    <string name="clear_layout_warning">すべての行とアプリ配置が削除されます。この操作は取り消せません。よろしいですか？</string>
-    <string name="clear_layout_desc">すべての行と配置が削除されます</string>
-    <string name="clear_confirm_message">すべての行とアプリ配置が削除されます。この操作は取り消せません。よろしいですか？</string>
+    <string name="clear_layout">全ページのレイアウトをクリア</string>
+    <string name="clear_layout_warning">すべてのページの行とアプリ配置が削除されます。この操作は取り消せません。よろしいですか？</string>
+    <string name="clear_layout_desc">すべてのページの行と配置が削除されます</string>
+    <string name="clear_confirm_message">すべてのページの行とアプリ配置が削除されます。この操作は取り消せません。よろしいですか？</string>
+    <string name="reset_page">このページをリセット</string>
+    <string name="reset_page_warning">このページの行とアプリ配置が削除されます。よろしいですか？</string>
     <string name="reset_layout_warning">現在の配置がすべて消去され、デフォルトの配置に戻ります。この操作は取り消せません。よろしいですか？</string>
     <string name="reset_layout_desc">アプリの配置がデフォルトに戻ります</string>
     <string name="reset_confirm_message">現在の配置がすべて消去され、デフォルトの配置に戻ります。この操作は取り消せません。よろしいですか？</string>
