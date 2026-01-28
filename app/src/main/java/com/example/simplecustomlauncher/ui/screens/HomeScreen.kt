@@ -767,11 +767,11 @@ private fun ShortcutIcon(
         }
         ShortcutType.CALENDAR -> {
             val calendarIcon = painterResource(id = R.drawable.ic_calendar)
-            Icon(calendarIcon, stringResource(R.string.shortcut_type_calendar), Modifier.size(size), MaterialTheme.colorScheme.tertiary)
+            Icon(calendarIcon, stringResource(R.string.shortcut_type_calendar), Modifier.size(size), AppTheme.extendedColors.iconCalendar)
         }
         ShortcutType.MEMO -> {
             val memoIcon = painterResource(id = R.drawable.ic_memo)
-            Icon(memoIcon, stringResource(R.string.shortcut_type_memo), Modifier.size(size), MaterialTheme.colorScheme.secondary)
+            Icon(memoIcon, stringResource(R.string.shortcut_type_memo), Modifier.size(size), AppTheme.extendedColors.iconMemo)
         }
         ShortcutType.SETTINGS -> {
             Icon(Icons.Default.Settings, stringResource(R.string.settings), Modifier.size(size), MaterialTheme.colorScheme.onSurfaceVariant)
@@ -786,7 +786,7 @@ private fun ShortcutIcon(
                 val bitmap = remember(phoneIcon) { phoneIcon.toBitmap(128, 128) }
                 Image(bitmap = bitmap.asImageBitmap(), contentDescription = item.label, modifier = Modifier.size(size))
             } else {
-                Icon(Icons.Default.Phone, item.label, Modifier.size(size), MaterialTheme.colorScheme.tertiary)
+                Icon(Icons.Default.Phone, item.label, Modifier.size(size), AppTheme.extendedColors.iconCalendar)
             }
         }
         ShortcutType.SMS -> {
@@ -799,34 +799,29 @@ private fun ShortcutIcon(
                 val bitmap = remember(smsIcon) { smsIcon.toBitmap(128, 128) }
                 Image(bitmap = bitmap.asImageBitmap(), contentDescription = item.label, modifier = Modifier.size(size))
             } else {
-                Icon(Icons.Default.Email, item.label, Modifier.size(size), MaterialTheme.colorScheme.primary)
+                Icon(Icons.Default.Email, item.label, Modifier.size(size), AppTheme.extendedColors.iconMemo)
             }
         }
         ShortcutType.DIALER -> {
             // カスタムキーパッドアイコン
-            val tintColor = MaterialTheme.colorScheme.onSurface
+            val iconColor = AppTheme.extendedColors.iconDialer
             val dialerIcon = remember {
                 ContextCompat.getDrawable(context, R.drawable.ic_phone_keypad)
             }
             if (dialerIcon != null) {
-                val tintedDrawable = remember(dialerIcon, tintColor) {
-                    dialerIcon.mutate().apply {
-                        setTint(tintColor.hashCode())
-                    }
-                }
-                val bitmap = remember(tintedDrawable, tintColor) { tintedDrawable.toBitmap(128, 128) }
+                val bitmap = remember(dialerIcon) { dialerIcon.toBitmap(128, 128) }
                 Image(
                     bitmap = bitmap.asImageBitmap(),
                     contentDescription = item.label,
                     modifier = Modifier.size(size),
-                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(tintColor)
+                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(iconColor)
                 )
             } else {
-                Icon(Icons.Default.Phone, item.label, Modifier.size(size), MaterialTheme.colorScheme.tertiary)
+                Icon(Icons.Default.Phone, item.label, Modifier.size(size), iconColor)
             }
         }
         ShortcutType.ALL_APPS -> {
-            Icon(Icons.Default.Apps, stringResource(R.string.shortcut_type_all_apps), Modifier.size(size), MaterialTheme.colorScheme.primary)
+            Icon(Icons.Default.Apps, stringResource(R.string.shortcut_type_all_apps), Modifier.size(size), AppTheme.extendedColors.iconAllApps)
         }
         ShortcutType.DATE_DISPLAY -> { /* 専用コンポーネントで表示 */ }
         ShortcutType.TIME_DISPLAY -> { /* 専用コンポーネントで表示 */ }

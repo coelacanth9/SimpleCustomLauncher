@@ -46,3 +46,15 @@ val DarkOnSurfaceVariant = Color(0xFFBDBDBD)
 val TodayHighlight = Color(0xFFFFF9C4)
 val TodayHighlightDark = Color(0xFF5D4E37)
 val DisabledColor = Color(0xFFBDBDBD)
+
+// アイコン用カラー（ライトモード）- 600〜700番台で統一
+val IconMemoLight = Color(0xFF1976D2)       // Blue 700
+val IconCalendarLight = Color(0xFF388E3C)   // Green 700
+val IconDialerLight = Color(0xFF616161)     // Gray 700
+val IconAllAppsLight = Color(0xFFF57C00)    // Orange 700
+
+// アイコン用カラー（ダークモード）- 300番台で統一
+val IconMemoDark = Color(0xFF64B5F6)        // Blue 300
+val IconCalendarDark = Color(0xFF81C784)    // Green 300
+val IconDialerDark = Color(0xFFBDBDBD)      // Gray 400
+val IconAllAppsDark = Color(0xFFFFB74D)     // Orange 300

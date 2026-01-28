@@ -80,27 +80,43 @@ private val DarkColorScheme = darkColorScheme(
 data class ExtendedColors(
     val todayHighlight: Color,
     val editModeBorder: Color,
-    val cardBackground: Color
+    val cardBackground: Color,
+    val iconMemo: Color,
+    val iconCalendar: Color,
+    val iconDialer: Color,
+    val iconAllApps: Color
 )
 
 val LocalExtendedColors = staticCompositionLocalOf {
     ExtendedColors(
         todayHighlight = TodayHighlight,
         editModeBorder = OrangeSecondary,
-        cardBackground = LightSurface
+        cardBackground = LightSurface,
+        iconMemo = IconMemoLight,
+        iconCalendar = IconCalendarLight,
+        iconDialer = IconDialerLight,
+        iconAllApps = IconAllAppsLight
     )
 }
 
 private val LightExtendedColors = ExtendedColors(
     todayHighlight = TodayHighlight,
     editModeBorder = OrangeSecondary,
-    cardBackground = Color.White
+    cardBackground = Color.White,
+    iconMemo = IconMemoLight,
+    iconCalendar = IconCalendarLight,
+    iconDialer = IconDialerLight,
+    iconAllApps = IconAllAppsLight
 )
 
 private val DarkExtendedColors = ExtendedColors(
     todayHighlight = TodayHighlightDark,
     editModeBorder = OrangeSecondaryLight,
-    cardBackground = DarkSurface
+    cardBackground = DarkSurface,
+    iconMemo = IconMemoDark,
+    iconCalendar = IconCalendarDark,
+    iconDialer = IconDialerDark,
+    iconAllApps = IconAllAppsDark
 )
 
 // ===== テーマ適用 =====

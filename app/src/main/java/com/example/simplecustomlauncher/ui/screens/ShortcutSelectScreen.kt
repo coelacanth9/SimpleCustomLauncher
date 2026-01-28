@@ -50,6 +50,7 @@ import com.example.simplecustomlauncher.ui.components.CustomContentDialog
 import com.example.simplecustomlauncher.ui.components.LargeDangerConfirmDialog
 import com.example.simplecustomlauncher.ui.components.PremiumFeatureDialog
 import com.example.simplecustomlauncher.ui.components.RowDeleteConfirmDialog
+import com.example.simplecustomlauncher.ui.theme.AppTheme
 
 /**
  * 画面状態
@@ -1026,6 +1027,18 @@ private fun ShortcutCard(
     val context = LocalContext.current
     val shortcutHelper = remember { ShortcutHelper(context) }
 
+    // アイコンの色をHomeScreenと合わせる（ExtendedColors使用）
+    val iconColor = when (shortcut.type) {
+        ShortcutType.CALENDAR -> AppTheme.extendedColors.iconCalendar
+        ShortcutType.MEMO -> AppTheme.extendedColors.iconMemo
+        ShortcutType.DIALER -> AppTheme.extendedColors.iconDialer
+        ShortcutType.ALL_APPS -> AppTheme.extendedColors.iconAllApps
+        ShortcutType.SETTINGS -> contentColor
+        ShortcutType.PHONE -> AppTheme.extendedColors.iconCalendar  // 緑系
+        ShortcutType.SMS -> AppTheme.extendedColors.iconMemo        // 青系
+        else -> contentColor
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -1084,7 +1097,7 @@ private fun ShortcutCard(
                                 bitmap = bitmap.asImageBitmap(),
                                 contentDescription = shortcut.label,
                                 modifier = Modifier.size(32.dp),
-                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(contentColor)
+                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(iconColor)
                             )
                         }
                     }
@@ -1098,7 +1111,7 @@ private fun ShortcutCard(
                                 bitmap = bitmap.asImageBitmap(),
                                 contentDescription = shortcut.label,
                                 modifier = Modifier.size(32.dp),
-                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(contentColor)
+                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(iconColor)
                             )
                         }
                     }
@@ -1107,7 +1120,7 @@ private fun ShortcutCard(
                             Icons.Default.Apps,
                             contentDescription = shortcut.label,
                             modifier = Modifier.size(32.dp),
-                            tint = contentColor
+                            tint = iconColor
                         )
                     }
                     ShortcutType.DIALER -> {
@@ -1120,7 +1133,7 @@ private fun ShortcutCard(
                                 bitmap = bitmap.asImageBitmap(),
                                 contentDescription = shortcut.label,
                                 modifier = Modifier.size(32.dp),
-                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(contentColor)
+                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(iconColor)
                             )
                         }
                     }
@@ -1129,7 +1142,7 @@ private fun ShortcutCard(
                             Icons.Default.Phone,
                             contentDescription = shortcut.label,
                             modifier = Modifier.size(32.dp),
-                            tint = contentColor
+                            tint = iconColor
                         )
                     }
                     ShortcutType.SMS -> {
@@ -1155,7 +1168,7 @@ private fun ShortcutCard(
                                 Icons.Default.Email,
                                 contentDescription = shortcut.label,
                                 modifier = Modifier.size(32.dp),
-                                tint = contentColor
+                                tint = iconColor
                             )
                         }
                     }
@@ -1164,7 +1177,7 @@ private fun ShortcutCard(
                             Icons.Default.Settings,
                             contentDescription = shortcut.label,
                             modifier = Modifier.size(32.dp),
-                            tint = contentColor
+                            tint = iconColor
                         )
                     }
                     else -> {
@@ -1220,6 +1233,15 @@ private fun InternalFeatureGridItem(
     val contentColor = MaterialTheme.colorScheme.onSurfaceVariant
     val label = stringResource(feature.labelResId)
 
+    // アイコンの色をHomeScreenと合わせる（ExtendedColors使用）
+    val iconColor = when (feature.type) {
+        ShortcutType.CALENDAR -> AppTheme.extendedColors.iconCalendar
+        ShortcutType.MEMO -> AppTheme.extendedColors.iconMemo
+        ShortcutType.DIALER -> AppTheme.extendedColors.iconDialer
+        ShortcutType.ALL_APPS -> AppTheme.extendedColors.iconAllApps
+        else -> contentColor
+    }
+
     Card(
         modifier = modifier
             .clickable(onClick = onClick),
@@ -1253,7 +1275,7 @@ private fun InternalFeatureGridItem(
                                 bitmap = bitmap.asImageBitmap(),
                                 contentDescription = label,
                                 modifier = Modifier.size(32.dp),
-                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(contentColor)
+                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(iconColor)
                             )
                         }
                     }
@@ -1267,7 +1289,7 @@ private fun InternalFeatureGridItem(
                                 bitmap = bitmap.asImageBitmap(),
                                 contentDescription = label,
                                 modifier = Modifier.size(32.dp),
-                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(contentColor)
+                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(iconColor)
                             )
                         }
                     }
@@ -1281,7 +1303,7 @@ private fun InternalFeatureGridItem(
                                 bitmap = bitmap.asImageBitmap(),
                                 contentDescription = label,
                                 modifier = Modifier.size(32.dp),
-                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(contentColor)
+                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(iconColor)
                             )
                         }
                     }
@@ -1290,7 +1312,7 @@ private fun InternalFeatureGridItem(
                             Icons.Default.Apps,
                             contentDescription = label,
                             modifier = Modifier.size(32.dp),
-                            tint = contentColor
+                            tint = iconColor
                         )
                     }
                     else -> {}
