@@ -6,7 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,6 +43,21 @@ fun SlotEditSheet(
         it.id in placedShortcutIds &&
         it.id != currentShortcut?.id &&
         it.type != ShortcutType.EMPTY
+    }
+
+    // スロットを空にする確認ダイアログ
+    var showClearConfirmDialog by remember { mutableStateOf(false) }
+    if (showClearConfirmDialog) {
+        LargeDangerConfirmDialog(
+            title = stringResource(R.string.clear_slot),
+            message = stringResource(R.string.clear_slot_warning),
+            confirmText = stringResource(R.string.delete_action),
+            onConfirm = {
+                showClearConfirmDialog = false
+                onClear()
+            },
+            onDismiss = { showClearConfirmDialog = false }
+        )
     }
 
     ModalBottomSheet(
@@ -115,7 +130,7 @@ fun SlotEditSheet(
                         ActionButton(
                             text = stringResource(R.string.clear_slot),
                             color = MaterialTheme.colorScheme.error,
-                            onClick = onClear
+                            onClick = { showClearConfirmDialog = true }
                         )
                     }
                 }

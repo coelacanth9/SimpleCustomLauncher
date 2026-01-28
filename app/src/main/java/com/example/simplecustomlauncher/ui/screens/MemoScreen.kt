@@ -28,6 +28,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import com.example.simplecustomlauncher.R
+import com.example.simplecustomlauncher.ui.components.SelectionDialog
 
 /**
  * メモ帳画面

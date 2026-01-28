@@ -28,6 +28,11 @@ import com.example.simplecustomlauncher.data.RestoreResult
 import com.example.simplecustomlauncher.data.SettingsRepository
 import com.example.simplecustomlauncher.data.TapMode
 import com.example.simplecustomlauncher.data.ThemeMode
+import com.example.simplecustomlauncher.ui.components.ConfirmDialog
+import com.example.simplecustomlauncher.ui.components.DangerConfirmDialog
+import com.example.simplecustomlauncher.ui.components.InfoDialog
+import com.example.simplecustomlauncher.ui.components.PremiumFeatureDialog
+import com.example.simplecustomlauncher.ui.components.SelectionDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -379,50 +384,19 @@ fun AppSettingsScreen(
     if (showTapModeDialog) {
         val tapModeSingleLabel = stringResource(R.string.tap_mode_single)
         val tapModeLongLabel = stringResource(R.string.tap_mode_long)
-        val cancelLabel = stringResource(R.string.cancel)
-        AlertDialog(
-            onDismissRequest = { showTapModeDialog = false },
-            title = { Text(stringResource(R.string.select_tap_mode)) },
-            text = {
-                Column {
-                    TapMode.values().forEach { mode ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    tapMode = mode
-                                    settingsRepository.tapMode = mode
-                                    showTapModeDialog = false
-                                }
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = tapMode == mode,
-                                onClick = {
-                                    tapMode = mode
-                                    settingsRepository.tapMode = mode
-                                    showTapModeDialog = false
-                                }
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = when (mode) {
-                                    TapMode.SINGLE_TAP -> tapModeSingleLabel
-                                    TapMode.LONG_TAP -> tapModeLongLabel
-                                },
-                                fontSize = 18.sp
-                            )
-                        }
-                    }
-                }
+        SelectionDialog(
+            title = stringResource(R.string.select_tap_mode),
+            options = listOf(
+                TapMode.SINGLE_TAP to tapModeSingleLabel,
+                TapMode.LONG_TAP to tapModeLongLabel
+            ),
+            selectedOption = tapMode,
+            onSelect = { mode ->
+                tapMode = mode
+                settingsRepository.tapMode = mode
+                showTapModeDialog = false
             },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { showTapModeDialog = false }) {
-                    Text(cancelLabel)
-                }
-            }
+            onDismiss = { showTapModeDialog = false }
         )
     }
 
@@ -431,272 +405,133 @@ fun AppSettingsScreen(
         val themeSystemLabel = stringResource(R.string.theme_system)
         val themeLightLabel = stringResource(R.string.theme_light)
         val themeDarkLabel = stringResource(R.string.theme_dark)
-        val cancelLabel = stringResource(R.string.cancel)
-        AlertDialog(
-            onDismissRequest = { showThemeModeDialog = false },
-            title = { Text(stringResource(R.string.select_theme)) },
-            text = {
-                Column {
-                    listOf(
-                        ThemeMode.SYSTEM to themeSystemLabel,
-                        ThemeMode.LIGHT to themeLightLabel,
-                        ThemeMode.DARK to themeDarkLabel
-                    ).forEach { (mode, label) ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    themeMode = mode
-                                    settingsRepository.themeMode = mode
-                                    onThemeChanged(mode)
-                                    showThemeModeDialog = false
-                                }
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = themeMode == mode,
-                                onClick = {
-                                    themeMode = mode
-                                    settingsRepository.themeMode = mode
-                                    onThemeChanged(mode)
-                                    showThemeModeDialog = false
-                                }
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = label,
-                                fontSize = 18.sp
-                            )
-                        }
-                    }
-                }
+        SelectionDialog(
+            title = stringResource(R.string.select_theme),
+            options = listOf(
+                ThemeMode.SYSTEM to themeSystemLabel,
+                ThemeMode.LIGHT to themeLightLabel,
+                ThemeMode.DARK to themeDarkLabel
+            ),
+            selectedOption = themeMode,
+            onSelect = { mode ->
+                themeMode = mode
+                settingsRepository.themeMode = mode
+                onThemeChanged(mode)
+                showThemeModeDialog = false
             },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { showThemeModeDialog = false }) {
-                    Text(cancelLabel)
-                }
-            }
+            onDismiss = { showThemeModeDialog = false }
         )
     }
 
     // リセット確認ダイアログ
     if (showResetDialog) {
-        AlertDialog(
-            onDismissRequest = { showResetDialog = false },
-            title = { Text(stringResource(R.string.reset_to_default)) },
-            text = { Text(stringResource(R.string.reset_confirm_message)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onResetToDefault()
-                        showResetDialog = false
-                    }
-                ) {
-                    Text(stringResource(R.string.reset_to_default_short), color = MaterialTheme.colorScheme.error)
-                }
+        DangerConfirmDialog(
+            title = stringResource(R.string.reset_to_default),
+            message = stringResource(R.string.reset_confirm_message),
+            confirmText = stringResource(R.string.reset_to_default_short),
+            onConfirm = {
+                onResetToDefault()
+                showResetDialog = false
             },
-            dismissButton = {
-                TextButton(onClick = { showResetDialog = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
+            onDismiss = { showResetDialog = false }
         )
     }
 
     // レイアウト削除確認ダイアログ
     if (showClearDialog) {
-        AlertDialog(
-            onDismissRequest = { showClearDialog = false },
-            title = { Text(stringResource(R.string.clear_layout)) },
-            text = { Text(stringResource(R.string.clear_confirm_message)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onClearLayout()
-                        showClearDialog = false
-                    }
-                ) {
-                    Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
-                }
+        DangerConfirmDialog(
+            title = stringResource(R.string.clear_layout),
+            message = stringResource(R.string.clear_confirm_message),
+            confirmText = stringResource(R.string.delete),
+            onConfirm = {
+                onClearLayout()
+                showClearDialog = false
             },
-            dismissButton = {
-                TextButton(onClick = { showClearDialog = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
+            onDismiss = { showClearDialog = false }
         )
     }
 
     // ページ数選択ダイアログ
     if (showPageCountDialog) {
-        AlertDialog(
-            onDismissRequest = { showPageCountDialog = false },
-            title = { Text(stringResource(R.string.select_page_count)) },
-            text = {
-                Column {
-                    (1..SettingsRepository.MAX_PAGES).forEach { count ->
-                        val pageLabel = stringResource(R.string.page_count_format, count)
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    pageCount = count
-                                    settingsRepository.pageCount = count
-                                    showPageCountDialog = false
-                                }
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = pageCount == count,
-                                onClick = {
-                                    pageCount = count
-                                    settingsRepository.pageCount = count
-                                    showPageCountDialog = false
-                                }
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = pageLabel,
-                                fontSize = 18.sp
-                            )
-                        }
-                    }
-                }
+        val pageOptions = (1..SettingsRepository.MAX_PAGES).map { count ->
+            count to stringResource(R.string.page_count_format, count)
+        }
+        SelectionDialog(
+            title = stringResource(R.string.select_page_count),
+            options = pageOptions,
+            selectedOption = pageCount,
+            onSelect = { count ->
+                pageCount = count
+                settingsRepository.pageCount = count
+                showPageCountDialog = false
             },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { showPageCountDialog = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
+            onDismiss = { showPageCountDialog = false }
         )
     }
 
     // プレミアム機能ダイアログ
     if (showPremiumDialog) {
-        AlertDialog(
-            onDismissRequest = { showPremiumDialog = false },
-            title = { Text(stringResource(R.string.premium_feature)) },
-            text = {
-                Column {
-                    Text(stringResource(R.string.premium_page_only))
-                    Spacer(modifier = Modifier.height(8.dp))
-                    if (formattedPrice != null) {
-                        Text(stringResource(R.string.premium_price_format, formattedPrice))
-                    } else {
-                        Text(stringResource(R.string.premium_unlock_short))
-                    }
-                }
+        PremiumFeatureDialog(
+            description = stringResource(R.string.premium_page_only),
+            formattedPrice = formattedPrice,
+            isAdReady = isAdReady,
+            onWatchAd = {
+                onWatchAd()
+                showPremiumDialog = false
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onWatchAd()
-                        showPremiumDialog = false
-                    },
-                    enabled = isAdReady
-                ) {
-                    Text(
-                        if (isAdReady) {
-                            stringResource(R.string.watch_ad_unlock)
-                        } else {
-                            stringResource(R.string.ad_loading)
-                        }
-                    )
-                }
+            onPurchase = {
+                onPurchase()
+                showPremiumDialog = false
             },
-            dismissButton = {
-                Row {
-                    TextButton(onClick = { showPremiumDialog = false }) {
-                        Text(stringResource(R.string.cancel))
-                    }
-                    TextButton(
-                        onClick = {
-                            onPurchase()
-                            showPremiumDialog = false
-                        }
-                    ) {
-                        Text(
-                            if (formattedPrice != null) {
-                                stringResource(R.string.purchase_with_price, formattedPrice)
-                            } else {
-                                stringResource(R.string.purchase_unlock)
-                            }
-                        )
-                    }
-                }
-            }
+            onDismiss = { showPremiumDialog = false }
         )
     }
 
     // 復元確認ダイアログ
     if (showRestoreConfirmDialog) {
-        AlertDialog(
-            onDismissRequest = {
+        ConfirmDialog(
+            title = stringResource(R.string.restore_confirm_title),
+            message = stringResource(R.string.restore_confirm_message),
+            confirmText = stringResource(R.string.restore),
+            onConfirm = {
+                pendingRestoreUri?.let { uri ->
+                    val result = backupManager.restoreFromUri(uri)
+                    restoreResultMessage = when (result) {
+                        is RestoreResult.Success -> context.getString(
+                            R.string.restore_success,
+                            result.shortcutCount,
+                            result.pageCount
+                        )
+                        is RestoreResult.Error -> "${context.getString(R.string.restore_error)}: ${result.message}"
+                    }
+                    showRestoreResultDialog = true
+                    if (result is RestoreResult.Success) {
+                        // 設定値を再読み込み
+                        themeMode = settingsRepository.themeMode
+                        tapMode = settingsRepository.tapMode
+                        showConfirmDialog = settingsRepository.showConfirmDialog
+                        tapFeedback = settingsRepository.tapFeedback
+                        pageCount = settingsRepository.pageCount
+                        loopPagingEnabled = settingsRepository.loopPagingEnabled
+                        onRestoreComplete()
+                    }
+                }
                 showRestoreConfirmDialog = false
                 pendingRestoreUri = null
             },
-            title = { Text(stringResource(R.string.restore_confirm_title)) },
-            text = { Text(stringResource(R.string.restore_confirm_message)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        pendingRestoreUri?.let { uri ->
-                            val result = backupManager.restoreFromUri(uri)
-                            restoreResultMessage = when (result) {
-                                is RestoreResult.Success -> context.getString(
-                                    R.string.restore_success,
-                                    result.shortcutCount,
-                                    result.pageCount
-                                )
-                                is RestoreResult.Error -> "${context.getString(R.string.restore_error)}: ${result.message}"
-                            }
-                            showRestoreResultDialog = true
-                            if (result is RestoreResult.Success) {
-                                // 設定値を再読み込み
-                                themeMode = settingsRepository.themeMode
-                                tapMode = settingsRepository.tapMode
-                                showConfirmDialog = settingsRepository.showConfirmDialog
-                                tapFeedback = settingsRepository.tapFeedback
-                                pageCount = settingsRepository.pageCount
-                                loopPagingEnabled = settingsRepository.loopPagingEnabled
-                                onRestoreComplete()
-                            }
-                        }
-                        showRestoreConfirmDialog = false
-                        pendingRestoreUri = null
-                    }
-                ) {
-                    Text(stringResource(R.string.restore))
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showRestoreConfirmDialog = false
-                        pendingRestoreUri = null
-                    }
-                ) {
-                    Text(stringResource(R.string.cancel))
-                }
+            onDismiss = {
+                showRestoreConfirmDialog = false
+                pendingRestoreUri = null
             }
         )
     }
 
     // 復元結果ダイアログ
     if (showRestoreResultDialog) {
-        AlertDialog(
-            onDismissRequest = { showRestoreResultDialog = false },
-            title = { Text(stringResource(R.string.restore_confirm_title)) },
-            text = { Text(restoreResultMessage ?: "") },
-            confirmButton = {
-                TextButton(onClick = { showRestoreResultDialog = false }) {
-                    Text(stringResource(R.string.close))
-                }
-            }
+        InfoDialog(
+            title = stringResource(R.string.restore_confirm_title),
+            message = restoreResultMessage ?: "",
+            onDismiss = { showRestoreResultDialog = false }
         )
     }
 }
@@ -1018,11 +853,7 @@ private fun SettingsPremiumSwitchItem(
                             text = "Premium",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (enabled) {
-                                Color(0xFFFF9800) // オレンジ
-                            } else {
-                                MaterialTheme.colorScheme.outline
-                            }
+                            color = Color(0xFFFF9800) // オレンジ（常に目立つ）
                         )
                     }
                 }

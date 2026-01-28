@@ -42,6 +42,9 @@ import com.example.simplecustomlauncher.data.ShortcutType
 import com.example.simplecustomlauncher.R
 import com.example.simplecustomlauncher.ui.components.ColumnOptionCard
 import com.example.simplecustomlauncher.ui.components.ContactTypeDialog
+import com.example.simplecustomlauncher.ui.components.CustomContentDialog
+import com.example.simplecustomlauncher.ui.components.LargeDangerConfirmDialog
+import com.example.simplecustomlauncher.ui.components.PremiumFeatureDialog
 import com.example.simplecustomlauncher.ui.components.RowDeleteConfirmDialog
 
 /**
@@ -299,6 +302,7 @@ fun SlotEditScreen(
     val contactPicker = rememberContactPicker { /* not used here */ }
     var showColumnsDialog by remember { mutableStateOf(false) }
     var showDeleteRowDialog by remember { mutableStateOf(false) }
+    var showClearSlotDialog by remember { mutableStateOf(false) }
     var showPremiumDialog by remember { mutableStateOf(false) }
 
     var screenState by remember { mutableStateOf<SelectScreenState>(SelectScreenState.Main) }
@@ -315,60 +319,35 @@ fun SlotEditScreen(
         )
     }
 
+    // スロットを空にする確認ダイアログ
+    if (showClearSlotDialog) {
+        LargeDangerConfirmDialog(
+            title = stringResource(R.string.clear_slot),
+            message = stringResource(R.string.clear_slot_warning),
+            confirmText = stringResource(R.string.delete_action),
+            onConfirm = {
+                showClearSlotDialog = false
+                onClear()
+            },
+            onDismiss = { showClearSlotDialog = false }
+        )
+    }
+
     // プレミアム機能ダイアログ
     if (showPremiumDialog) {
-        AlertDialog(
-            onDismissRequest = { showPremiumDialog = false },
-            title = { Text(stringResource(R.string.premium_feature)) },
-            text = {
-                Column {
-                    Text(stringResource(R.string.background_color_premium))
-                    Spacer(modifier = Modifier.height(8.dp))
-                    if (formattedPrice != null) {
-                        Text(stringResource(R.string.premium_price_format, formattedPrice))
-                    } else {
-                        Text(stringResource(R.string.premium_unlock_short))
-                    }
-                }
+        PremiumFeatureDialog(
+            description = stringResource(R.string.background_color_premium),
+            formattedPrice = formattedPrice,
+            isAdReady = isAdReady,
+            onWatchAd = {
+                onWatchAd()
+                showPremiumDialog = false
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onWatchAd()
-                        showPremiumDialog = false
-                    },
-                    enabled = isAdReady
-                ) {
-                    Text(
-                        if (isAdReady) {
-                            stringResource(R.string.watch_ad_unlock)
-                        } else {
-                            stringResource(R.string.ad_loading)
-                        }
-                    )
-                }
+            onPurchase = {
+                onPurchase()
+                showPremiumDialog = false
             },
-            dismissButton = {
-                Row {
-                    TextButton(onClick = { showPremiumDialog = false }) {
-                        Text(stringResource(R.string.cancel))
-                    }
-                    TextButton(
-                        onClick = {
-                            onPurchase()
-                            showPremiumDialog = false
-                        }
-                    ) {
-                        Text(
-                            if (formattedPrice != null) {
-                                stringResource(R.string.purchase_with_price, formattedPrice)
-                            } else {
-                                stringResource(R.string.purchase_unlock)
-                            }
-                        )
-                    }
-                }
-            }
+            onDismiss = { showPremiumDialog = false }
         )
     }
 
@@ -415,7 +394,7 @@ fun SlotEditScreen(
                     onSelectInternal = onSelectInternal,
                     onGoToAppList = { screenState = SelectScreenState.AppList },
                     onContactPicker = contactPicker.startPicker,
-                    onClear = onClear,
+                    onClear = { showClearSlotDialog = true },
                     onShowColumnsDialog = { showColumnsDialog = true },
                     onChangeTextOnly = onChangeTextOnly,
                     onChangeColors = onChangeColors,
@@ -468,52 +447,45 @@ fun SlotEditScreen(
 
     // 分割数変更ダイアログ
     if (showColumnsDialog) {
-        AlertDialog(
-            onDismissRequest = { showColumnsDialog = false },
-            title = { Text(stringResource(R.string.change_column_count)) },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.select_row_column_count),
-                        fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+        CustomContentDialog(
+            title = stringResource(R.string.change_column_count),
+            onDismiss = { showColumnsDialog = false }
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.select_row_column_count),
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
 
-                    // 各分割数オプション
-                    val descriptions = listOf(
-                        R.string.column_1_desc,
-                        R.string.column_2_desc,
-                        R.string.column_3_desc
-                    )
-                    listOf(1, 2, 3).forEachIndexed { index, columns ->
-                        ColumnOptionCard(
-                            columns = columns,
-                            description = stringResource(descriptions[index]),
-                            isSelected = columns == currentColumns,
-                            onClick = {
-                                onChangeColumns(columns)
-                                showColumnsDialog = false
-                            }
-                        )
-                    }
-
-                    Text(
-                        text = stringResource(R.string.column_reduce_warning),
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                // 各分割数オプション
+                val descriptions = listOf(
+                    R.string.column_1_desc,
+                    R.string.column_2_desc,
+                    R.string.column_3_desc
+                )
+                listOf(1, 2, 3).forEachIndexed { index, columns ->
+                    ColumnOptionCard(
+                        columns = columns,
+                        description = stringResource(descriptions[index]),
+                        isSelected = columns == currentColumns,
+                        onClick = {
+                            onChangeColumns(columns)
+                            showColumnsDialog = false
+                        }
                     )
                 }
-            },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { showColumnsDialog = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
+
+                Text(
+                    text = stringResource(R.string.column_reduce_warning),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-        )
+        }
     }
 }
 
