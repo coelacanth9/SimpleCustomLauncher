@@ -248,8 +248,17 @@ class MainViewModel(
 
     fun getPlacedShortcuts(): List<ShortcutItem> {
         val placedIds = getAllPlacements().map { it.shortcutId }.toSet()
+        // アプリ内機能は配置済みリストに表示しない
+        val internalTypes = setOf(
+            ShortcutType.CALENDAR,
+            ShortcutType.MEMO,
+            ShortcutType.DIALER,
+            ShortcutType.ALL_APPS,
+            ShortcutType.DATE_DISPLAY,
+            ShortcutType.TIME_DISPLAY
+        )
         return getAllShortcuts().filter {
-            it.id in placedIds && it.type != ShortcutType.EMPTY
+            it.id in placedIds && it.type != ShortcutType.EMPTY && it.type !in internalTypes
         }
     }
 
