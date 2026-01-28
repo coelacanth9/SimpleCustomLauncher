@@ -18,7 +18,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -70,8 +74,8 @@ val internalFeatures = listOf(
     InternalFeature(ShortcutType.MEMO, R.string.shortcut_type_memo, "📝"),
     InternalFeature(ShortcutType.DIALER, R.string.shortcut_type_phone, "📞"),
     InternalFeature(ShortcutType.ALL_APPS, R.string.shortcut_type_all_apps, "📱"),
-    InternalFeature(ShortcutType.DATE_DISPLAY, R.string.shortcut_type_date, "📆"),
-    InternalFeature(ShortcutType.TIME_DISPLAY, R.string.shortcut_type_time, "🕐")
+    InternalFeature(ShortcutType.DATE_DISPLAY, R.string.shortcut_type_date, ""),
+    InternalFeature(ShortcutType.TIME_DISPLAY, R.string.shortcut_type_time, "")
 )
 
 /**
@@ -504,7 +508,14 @@ private fun LazyListScope.commonSelectContent(
     // アプリ一覧へ
     item {
         NavigationCard(
-            icon = { Text(text = "📱", fontSize = 24.sp) },
+            icon = {
+                Icon(
+                    Icons.Default.Apps,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
             text = stringResource(R.string.select_from_app_list),
             onClick = onGoToAppList
         )
@@ -1026,54 +1037,154 @@ private fun ShortcutCard(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // APP/INTENTは実際のアイコン、それ以外は絵文字
-            when (shortcut.type) {
-                ShortcutType.APP, ShortcutType.INTENT -> {
-                    val appIcon = remember(shortcut.packageName) {
-                        shortcut.packageName?.let { shortcutHelper.getAppIcon(it) }
-                    }
-                    if (appIcon != null) {
-                        Image(
-                            bitmap = appIcon.toBitmap(64, 64).asImageBitmap(),
-                            contentDescription = shortcut.label,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    } else {
-                        Text(text = "📱", fontSize = 24.sp)
-                    }
-                }
-                else -> {
+            // DATE_DISPLAY/TIME_DISPLAYはラベルのみ大きく表示
+            if (shortcut.type == ShortcutType.DATE_DISPLAY || shortcut.type == ShortcutType.TIME_DISPLAY) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = when (shortcut.type) {
-                            ShortcutType.PHONE -> "📞"
-                            ShortcutType.SMS -> "💬"
-                            ShortcutType.DIALER -> "📞"
-                            ShortcutType.CALENDAR -> "📅"
-                            ShortcutType.MEMO -> "📝"
-                            ShortcutType.SETTINGS -> "⚙️"
-                            ShortcutType.ALL_APPS -> "📱"
-                            ShortcutType.DATE_DISPLAY -> "📆"
-                            ShortcutType.TIME_DISPLAY -> "🕐"
-                            ShortcutType.EMPTY -> ""
-                            else -> "📱"
-                        },
-                        fontSize = 24.sp
+                        text = getLocalizedLabel(shortcut),
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = contentColor
+                    )
+                    Text(
+                        text = stringResource(subtitleResId),
+                        fontSize = 12.sp,
+                        color = contentColor.copy(alpha = 0.7f)
                     )
                 }
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = getLocalizedLabel(shortcut),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = contentColor
-                )
-                Text(
-                    text = stringResource(subtitleResId),
-                    fontSize = 12.sp,
-                    color = contentColor.copy(alpha = 0.7f)
-                )
+            } else {
+                // APP/INTENTは実際のアイコン、MEMO/CALENDARはDrawable、それ以外は絵文字
+                when (shortcut.type) {
+                    ShortcutType.APP, ShortcutType.INTENT -> {
+                        val appIcon = remember(shortcut.packageName) {
+                            shortcut.packageName?.let { shortcutHelper.getAppIcon(it) }
+                        }
+                        if (appIcon != null) {
+                            Image(
+                                bitmap = appIcon.toBitmap(64, 64).asImageBitmap(),
+                                contentDescription = shortcut.label,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        } else {
+                            Icon(
+                                Icons.Default.Apps,
+                                contentDescription = shortcut.label,
+                                modifier = Modifier.size(32.dp),
+                                tint = contentColor
+                            )
+                        }
+                    }
+                    ShortcutType.MEMO -> {
+                        val memoIcon = remember {
+                            ContextCompat.getDrawable(context, R.drawable.ic_memo)
+                        }
+                        if (memoIcon != null) {
+                            val bitmap = remember(memoIcon) { memoIcon.toBitmap(64, 64) }
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = shortcut.label,
+                                modifier = Modifier.size(32.dp),
+                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(contentColor)
+                            )
+                        }
+                    }
+                    ShortcutType.CALENDAR -> {
+                        val calendarIcon = remember {
+                            ContextCompat.getDrawable(context, R.drawable.ic_calendar)
+                        }
+                        if (calendarIcon != null) {
+                            val bitmap = remember(calendarIcon) { calendarIcon.toBitmap(64, 64) }
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = shortcut.label,
+                                modifier = Modifier.size(32.dp),
+                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(contentColor)
+                            )
+                        }
+                    }
+                    ShortcutType.ALL_APPS -> {
+                        Icon(
+                            Icons.Default.Apps,
+                            contentDescription = shortcut.label,
+                            modifier = Modifier.size(32.dp),
+                            tint = contentColor
+                        )
+                    }
+                    ShortcutType.DIALER -> {
+                        val dialerIcon = remember {
+                            ContextCompat.getDrawable(context, R.drawable.ic_phone_keypad)
+                        }
+                        if (dialerIcon != null) {
+                            val bitmap = remember(dialerIcon) { dialerIcon.toBitmap(64, 64) }
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = shortcut.label,
+                                modifier = Modifier.size(32.dp),
+                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(contentColor)
+                            )
+                        }
+                    }
+                    ShortcutType.PHONE -> {
+                        Icon(
+                            Icons.Default.Phone,
+                            contentDescription = shortcut.label,
+                            modifier = Modifier.size(32.dp),
+                            tint = contentColor
+                        )
+                    }
+                    ShortcutType.SMS -> {
+                        val smsIcon = remember {
+                            val pm = context.packageManager
+                            listOf(
+                                "com.google.android.apps.messaging",
+                                "com.android.mms",
+                                "com.samsung.android.messaging"
+                            ).firstNotNullOfOrNull { pkg ->
+                                try { pm.getApplicationIcon(pkg) } catch (e: Exception) { null }
+                            }
+                        }
+                        if (smsIcon != null) {
+                            val bitmap = remember(smsIcon) { smsIcon.toBitmap(64, 64) }
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = shortcut.label,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        } else {
+                            Icon(
+                                Icons.Default.Email,
+                                contentDescription = shortcut.label,
+                                modifier = Modifier.size(32.dp),
+                                tint = contentColor
+                            )
+                        }
+                    }
+                    ShortcutType.SETTINGS -> {
+                        Icon(
+                            Icons.Default.Settings,
+                            contentDescription = shortcut.label,
+                            modifier = Modifier.size(32.dp),
+                            tint = contentColor
+                        )
+                    }
+                    else -> {
+                        // EMPTY or unknown
+                    }
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = getLocalizedLabel(shortcut),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = contentColor
+                    )
+                    Text(
+                        text = stringResource(subtitleResId),
+                        fontSize = 12.sp,
+                        color = contentColor.copy(alpha = 0.7f)
+                    )
+                }
             }
         }
     }
@@ -1087,24 +1198,13 @@ private fun InternalFeaturesGrid(
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // 3列×2行のグリッド
-        features.chunked(3).forEach { rowFeatures ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                rowFeatures.forEach { feature ->
-                    InternalFeatureGridItem(
-                        feature = feature,
-                        onClick = { onSelectInternal(feature) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                // 空きスペースを埋める（3列未満の場合）
-                repeat(3 - rowFeatures.size) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-            }
+        // 縦1列に並べる
+        features.forEach { feature ->
+            InternalFeatureGridItem(
+                feature = feature,
+                onClick = { onSelectInternal(feature) },
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
@@ -1126,38 +1226,85 @@ private fun InternalFeatureGridItem(
         colors = CardDefaults.cardColors(containerColor = containerColor),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            if (feature.type == ShortcutType.DIALER) {
-                val dialerIcon = remember {
-                    ContextCompat.getDrawable(context, R.drawable.ic_phone_keypad)
-                }
-                if (dialerIcon != null) {
-                    val bitmap = remember(dialerIcon) { dialerIcon.toBitmap(64, 64) }
-                    Image(
-                        bitmap = bitmap.asImageBitmap(),
-                        contentDescription = label,
-                        modifier = Modifier.size(28.dp),
-                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(contentColor)
-                    )
-                }
+            if (feature.icon.isEmpty()) {
+                // アイコンなし（日付・時刻）：ラベルのみ大きく表示
+                Text(
+                    text = label,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = contentColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             } else {
-                Text(text = feature.icon, fontSize = 28.sp)
+                // アイコン表示
+                when (feature.type) {
+                    ShortcutType.DIALER -> {
+                        val dialerIcon = remember {
+                            ContextCompat.getDrawable(context, R.drawable.ic_phone_keypad)
+                        }
+                        if (dialerIcon != null) {
+                            val bitmap = remember(dialerIcon) { dialerIcon.toBitmap(64, 64) }
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = label,
+                                modifier = Modifier.size(32.dp),
+                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(contentColor)
+                            )
+                        }
+                    }
+                    ShortcutType.MEMO -> {
+                        val memoIcon = remember {
+                            ContextCompat.getDrawable(context, R.drawable.ic_memo)
+                        }
+                        if (memoIcon != null) {
+                            val bitmap = remember(memoIcon) { memoIcon.toBitmap(64, 64) }
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = label,
+                                modifier = Modifier.size(32.dp),
+                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(contentColor)
+                            )
+                        }
+                    }
+                    ShortcutType.CALENDAR -> {
+                        val calendarIcon = remember {
+                            ContextCompat.getDrawable(context, R.drawable.ic_calendar)
+                        }
+                        if (calendarIcon != null) {
+                            val bitmap = remember(calendarIcon) { calendarIcon.toBitmap(64, 64) }
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = label,
+                                modifier = Modifier.size(32.dp),
+                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(contentColor)
+                            )
+                        }
+                    }
+                    ShortcutType.ALL_APPS -> {
+                        Icon(
+                            Icons.Default.Apps,
+                            contentDescription = label,
+                            modifier = Modifier.size(32.dp),
+                            tint = contentColor
+                        )
+                    }
+                    else -> {}
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = label,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = contentColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = label,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                color = contentColor,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
         }
     }
 }

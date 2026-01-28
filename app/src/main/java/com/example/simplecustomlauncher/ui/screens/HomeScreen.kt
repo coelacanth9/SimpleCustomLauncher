@@ -47,6 +47,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.painterResource
 import kotlinx.coroutines.delay
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -765,10 +766,12 @@ private fun ShortcutIcon(
             }
         }
         ShortcutType.CALENDAR -> {
-            Icon(Icons.Default.DateRange, stringResource(R.string.shortcut_type_calendar), Modifier.size(size), MaterialTheme.colorScheme.tertiary)
+            val calendarIcon = painterResource(id = R.drawable.ic_calendar)
+            Icon(calendarIcon, stringResource(R.string.shortcut_type_calendar), Modifier.size(size), MaterialTheme.colorScheme.tertiary)
         }
         ShortcutType.MEMO -> {
-            Icon(Icons.Default.Edit, stringResource(R.string.shortcut_type_memo), Modifier.size(size), MaterialTheme.colorScheme.secondary)
+            val memoIcon = painterResource(id = R.drawable.ic_memo)
+            Icon(memoIcon, stringResource(R.string.shortcut_type_memo), Modifier.size(size), MaterialTheme.colorScheme.secondary)
         }
         ShortcutType.SETTINGS -> {
             Icon(Icons.Default.Settings, stringResource(R.string.settings), Modifier.size(size), MaterialTheme.colorScheme.onSurfaceVariant)

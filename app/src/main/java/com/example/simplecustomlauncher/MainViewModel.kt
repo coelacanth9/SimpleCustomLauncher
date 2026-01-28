@@ -232,8 +232,17 @@ class MainViewModel(
 
     fun getUnplacedShortcuts(): List<ShortcutItem> {
         val placedIds = getAllPlacements().map { it.shortcutId }.toSet()
+        // アプリ内機能は未配置リストに表示しない
+        val internalTypes = setOf(
+            ShortcutType.CALENDAR,
+            ShortcutType.MEMO,
+            ShortcutType.DIALER,
+            ShortcutType.ALL_APPS,
+            ShortcutType.DATE_DISPLAY,
+            ShortcutType.TIME_DISPLAY
+        )
         return getAllShortcuts().filter {
-            it.id !in placedIds && it.type != ShortcutType.EMPTY
+            it.id !in placedIds && it.type != ShortcutType.EMPTY && it.type !in internalTypes
         }
     }
 
@@ -603,7 +612,30 @@ class MainViewModel(
                 column = column
             )
         )
+        // 日付/時刻の場合は行の高さを固定、それ以外は解除
+        updateRowFixedHeight(pageIndex, row, shortcut.type)
         refresh()
+    }
+
+    /**
+     * 行の固定高さを更新
+     * 日付/時刻を配置した場合は固定高さを設定、それ以外は解除
+     */
+    private fun updateRowFixedHeight(pageIndex: Int, rowIndex: Int, placedType: ShortcutType) {
+        val currentConfig = shortcutRepository.getLayoutConfig()
+        val newFixedHeight = when (placedType) {
+            ShortcutType.TIME_DISPLAY -> 80
+            ShortcutType.DATE_DISPLAY -> 56
+            else -> null
+        }
+        val newRows = currentConfig.rows.map { row ->
+            if (row.pageIndex == pageIndex && row.rowIndex == rowIndex) {
+                row.copy(fixedHeightDp = newFixedHeight)
+            } else {
+                row
+            }
+        }
+        shortcutRepository.saveLayoutConfig(HomeLayoutConfig(rows = newRows))
     }
 
     fun placeInternalFeature(type: ShortcutType, label: String, pageIndex: Int, row: Int, column: Int) {
