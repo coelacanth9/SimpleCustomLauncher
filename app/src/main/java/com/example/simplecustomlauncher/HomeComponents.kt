@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import com.example.simplecustomlauncher.R
 import androidx.compose.ui.text.font.FontWeight
@@ -90,32 +91,32 @@ fun HomeHeader(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
-                // 編集完了ボタン
+                // 編集完了ボタン（緑：完了/成功）
                 Surface(
                     modifier = Modifier.clickable { onEditDone() },
-                    color = MaterialTheme.colorScheme.secondary,
+                    color = Color(0xFF4CAF50), // Green
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.edit_complete),
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSecondary,
+                        color = Color.White,
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
                     )
                 }
                 Spacer(modifier = Modifier.size(16.dp))
-                // 行追加ボタン
+                // 行追加ボタン（青：アクション）
                 Surface(
                     modifier = Modifier.clickable { onAddRow() },
-                    color = MaterialTheme.colorScheme.tertiary,
+                    color = MaterialTheme.colorScheme.primaryContainer,
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.add_row),
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onTertiary,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
                     )
                 }

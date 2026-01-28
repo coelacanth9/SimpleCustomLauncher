@@ -260,6 +260,12 @@ class MainViewModel(
         private set
 
     /**
+     * デバッグプレミアム状態（UIで監視可能）
+     */
+    var debugPremiumEnabled by mutableStateOf(premiumManager.isDebugPremiumEnabled())
+        private set
+
+    /**
      * プレミアム状態を取得
      */
     fun isPremiumActive(): Boolean = premiumManager.isPremiumActive()
@@ -273,6 +279,24 @@ class MainViewModel(
             isPremium = newStatus
             refresh()
         }
+    }
+
+    /**
+     * デバッグ用：プレミアム状態を強制設定
+     */
+    fun setDebugPremium(enabled: Boolean) {
+        premiumManager.setDebugPremium(enabled)
+        debugPremiumEnabled = enabled
+        refreshPremiumStatus()
+    }
+
+    /**
+     * デバッグ用：全てのプレミアム状態をクリア
+     */
+    fun clearAllPremiumStatus() {
+        premiumManager.clearAllPremiumStatus()
+        debugPremiumEnabled = false
+        refreshPremiumStatus()
     }
 
     /**

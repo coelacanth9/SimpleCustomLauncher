@@ -61,6 +61,21 @@ interface PremiumManager {
      * プレミアム無効時: 0（1ページ目のみ）
      */
     fun getMaxAccessiblePageIndex(): Int
+
+    /**
+     * デバッグ用：プレミアム状態を強制設定
+     */
+    fun setDebugPremium(enabled: Boolean)
+
+    /**
+     * デバッグ用：デバッグプレミアムが有効かどうか
+     */
+    fun isDebugPremiumEnabled(): Boolean
+
+    /**
+     * デバッグ用：全てのプレミアム状態をクリア
+     */
+    fun clearAllPremiumStatus()
 }
 
 /**
@@ -84,6 +99,9 @@ class DefaultPremiumManager(
         val sources = mutableSetOf<PremiumSource>()
         var adWatchExpiresAt: Long? = null
 
+        // デバッグ用プレミアムチェック
+        val debugPremium = prefs.getBoolean(KEY_DEBUG_PREMIUM, false)
+
         // 買い切り購入チェック
         if (prefs.getBoolean(KEY_ONE_TIME_PURCHASE, false)) {
             sources.add(PremiumSource.ONE_TIME_PURCHASE)
@@ -102,7 +120,7 @@ class DefaultPremiumManager(
         }
 
         return PremiumStatus(
-            isActive = sources.isNotEmpty(),
+            isActive = sources.isNotEmpty() || debugPremium,
             activeSources = sources,
             adWatchExpiresAt = adWatchExpiresAt
         )
@@ -141,11 +159,31 @@ class DefaultPremiumManager(
         }
     }
 
+    override fun setDebugPremium(enabled: Boolean) {
+        prefs.edit()
+            .putBoolean(KEY_DEBUG_PREMIUM, enabled)
+            .apply()
+    }
+
+    override fun isDebugPremiumEnabled(): Boolean {
+        return prefs.getBoolean(KEY_DEBUG_PREMIUM, false)
+    }
+
+    override fun clearAllPremiumStatus() {
+        prefs.edit()
+            .putBoolean(KEY_ONE_TIME_PURCHASE, false)
+            .putBoolean(KEY_SUBSCRIPTION_ACTIVE, false)
+            .putLong(KEY_AD_WATCH_EXPIRY, 0)
+            .putBoolean(KEY_DEBUG_PREMIUM, false)
+            .apply()
+    }
+
     companion object {
         private const val PREFS_NAME = "premium_status"
         private const val KEY_ONE_TIME_PURCHASE = "one_time_purchase"
         private const val KEY_SUBSCRIPTION_ACTIVE = "subscription_active"
         private const val KEY_AD_WATCH_EXPIRY = "ad_watch_expiry"
+        private const val KEY_DEBUG_PREMIUM = "debug_premium"
 
         // 動画広告視聴の有効期間（24時間）
         private const val AD_WATCH_DURATION_MS = 24 * 60 * 60 * 1000L

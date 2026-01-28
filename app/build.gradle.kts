@@ -14,8 +14,8 @@ android {
         applicationId = "com.coelacanth9.simplecustomlauncher"
         minSdk = 33
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.0"
+        versionCode = 10
+        versionName = "1.0.10"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -38,6 +38,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

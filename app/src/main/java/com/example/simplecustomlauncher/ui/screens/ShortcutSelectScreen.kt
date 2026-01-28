@@ -286,6 +286,10 @@ fun SlotEditScreen(
     onChangeColors: (backgroundColor: String?, textColor: String?) -> Unit = { _, _ -> },
     onDeleteRow: () -> Unit,
     isPremium: Boolean = false,
+    onWatchAd: () -> Unit = {},
+    onPurchase: () -> Unit = {},
+    formattedPrice: String? = null,
+    isAdReady: Boolean = true,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -295,6 +299,7 @@ fun SlotEditScreen(
     val contactPicker = rememberContactPicker { /* not used here */ }
     var showColumnsDialog by remember { mutableStateOf(false) }
     var showDeleteRowDialog by remember { mutableStateOf(false) }
+    var showPremiumDialog by remember { mutableStateOf(false) }
 
     var screenState by remember { mutableStateOf<SelectScreenState>(SelectScreenState.Main) }
     var shortcuts by remember { mutableStateOf<List<ShortcutData>>(emptyList()) }
@@ -307,6 +312,63 @@ fun SlotEditScreen(
                 onDeleteRow()
             },
             onDismiss = { showDeleteRowDialog = false }
+        )
+    }
+
+    // プレミアム機能ダイアログ
+    if (showPremiumDialog) {
+        AlertDialog(
+            onDismissRequest = { showPremiumDialog = false },
+            title = { Text(stringResource(R.string.premium_feature)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.background_color_premium))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (formattedPrice != null) {
+                        Text(stringResource(R.string.premium_price_format, formattedPrice))
+                    } else {
+                        Text(stringResource(R.string.premium_unlock_short))
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onWatchAd()
+                        showPremiumDialog = false
+                    },
+                    enabled = isAdReady
+                ) {
+                    Text(
+                        if (isAdReady) {
+                            stringResource(R.string.watch_ad_unlock)
+                        } else {
+                            stringResource(R.string.ad_loading)
+                        }
+                    )
+                }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = { showPremiumDialog = false }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                    TextButton(
+                        onClick = {
+                            onPurchase()
+                            showPremiumDialog = false
+                        }
+                    ) {
+                        Text(
+                            if (formattedPrice != null) {
+                                stringResource(R.string.purchase_with_price, formattedPrice)
+                            } else {
+                                stringResource(R.string.purchase_unlock)
+                            }
+                        )
+                    }
+                }
+            }
         )
     }
 
@@ -359,6 +421,7 @@ fun SlotEditScreen(
                     onChangeColors = onChangeColors,
                     onDeleteRow = { showDeleteRowDialog = true },
                     isPremium = isPremium,
+                    onPremiumRequired = { showPremiumDialog = true },
                     modifier = Modifier.padding(paddingValues)
                 )
             }
@@ -586,6 +649,7 @@ private fun SlotEditMainContent(
     onChangeColors: (backgroundColor: String?, textColor: String?) -> Unit = { _, _ -> },
     onDeleteRow: () -> Unit,
     isPremium: Boolean = false,
+    onPremiumRequired: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -611,8 +675,8 @@ private fun SlotEditMainContent(
                 ShortcutCard(
                     shortcut = shortcut,
                     subtitleResId = R.string.tap_to_swap,
-                    backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     onClick = { onSelectPlaced(shortcut) }
                 )
             }
@@ -642,7 +706,8 @@ private fun SlotEditMainContent(
                 currentBackgroundColor = currentBackgroundColor,
                 currentTextColor = currentTextColor,
                 isPremium = isPremium,
-                onSelectColors = onChangeColors
+                onSelectColors = onChangeColors,
+                onPremiumRequired = onPremiumRequired
             )
         }
 
@@ -679,7 +744,7 @@ private fun SlotEditMainContent(
         item {
             ActionCard(
                 text = stringResource(R.string.delete_row),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.error,
                 onClick = onDeleteRow
             )
         }
@@ -1058,13 +1123,14 @@ private fun InternalFeatureGridItem(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+    val containerColor = MaterialTheme.colorScheme.surface
+    val contentColor = MaterialTheme.colorScheme.onSurface
     val label = stringResource(feature.labelResId)
 
     Card(
         modifier = modifier
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
         shape = RoundedCornerShape(12.dp)
     ) {
         Column(
@@ -1175,7 +1241,8 @@ private fun DisplayModeCard(
     textOnly: Boolean,
     onToggle: () -> Unit
 ) {
-    val color = MaterialTheme.colorScheme.tertiary
+    val containerColor = MaterialTheme.colorScheme.surfaceVariant
+    val contentColor = MaterialTheme.colorScheme.onSurfaceVariant
     val modeText = if (textOnly) {
         stringResource(R.string.display_mode_text_only)
     } else {
@@ -1186,7 +1253,7 @@ private fun DisplayModeCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onToggle),
-        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.1f)),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -1200,19 +1267,19 @@ private fun DisplayModeCard(
                 Text(
                     text = stringResource(R.string.display_mode),
                     fontSize = 14.sp,
-                    color = color.copy(alpha = 0.7f)
+                    color = contentColor.copy(alpha = 0.7f)
                 )
                 Text(
                     text = modeText,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
-                    color = color
+                    color = contentColor
                 )
             }
             Text(
                 text = stringResource(R.string.tap_to_change),
                 fontSize = 12.sp,
-                color = color.copy(alpha = 0.7f)
+                color = contentColor.copy(alpha = 0.7f)
             )
         }
     }
@@ -1223,13 +1290,23 @@ private fun ColorSetCard(
     currentBackgroundColor: String?,
     currentTextColor: String?,
     isPremium: Boolean,
-    onSelectColors: (backgroundColor: String?, textColor: String?) -> Unit
+    onSelectColors: (backgroundColor: String?, textColor: String?) -> Unit,
+    onPremiumRequired: () -> Unit = {}
 ) {
-    val themeColor = MaterialTheme.colorScheme.tertiary
+    val containerColor = MaterialTheme.colorScheme.surface
+    val contentColor = MaterialTheme.colorScheme.onSurface
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = themeColor.copy(alpha = 0.1f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (!isPremium) {
+                    Modifier.clickable(onClick = onPremiumRequired)
+                } else {
+                    Modifier
+                }
+            ),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
         shape = RoundedCornerShape(12.dp)
     ) {
         Column(
@@ -1238,21 +1315,20 @@ private fun ColorSetCard(
                 .padding(16.dp)
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = stringResource(R.string.background_color),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
-                    color = themeColor
+                    color = contentColor
                 )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "Premium",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.tertiary
+                    color = Color(0xFFFF9800) // オレンジ
                 )
             }
 
@@ -1300,7 +1376,7 @@ private fun ColorSetCard(
                 Text(
                     text = stringResource(R.string.background_color_premium),
                     fontSize = 14.sp,
-                    color = themeColor.copy(alpha = 0.7f)
+                    color = contentColor.copy(alpha = 0.8f)
                 )
             }
         }

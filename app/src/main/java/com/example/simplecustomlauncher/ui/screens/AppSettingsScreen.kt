@@ -21,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.simplecustomlauncher.BuildConfig
 import com.example.simplecustomlauncher.R
 import com.example.simplecustomlauncher.data.BackupManager
 import com.example.simplecustomlauncher.data.RestoreResult
@@ -41,7 +42,10 @@ fun AppSettingsScreen(
     onPurchase: () -> Unit = {},
     formattedPriceProvider: () -> String? = { null },
     isAdReadyProvider: () -> Boolean = { true },
-    onRestoreComplete: () -> Unit = {}
+    onRestoreComplete: () -> Unit = {},
+    debugPremiumEnabled: Boolean = false,
+    onDebugPremiumChange: (Boolean) -> Unit = {},
+    onDebugClearAllPremium: () -> Unit = {}
 ) {
     // 毎回評価されるように
     val isPremium = isPremiumProvider()
@@ -70,13 +74,15 @@ fun AppSettingsScreen(
     var restoreResultMessage by remember { mutableStateOf<String?>(null) }
     var showRestoreResultDialog by remember { mutableStateOf(false) }
 
-    // ファイルピッカー
+    // ファイルピッカー（ローカルファイル用）
     val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            pendingRestoreUri = uri
-            showRestoreConfirmDialog = true
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            result.data?.data?.let { uri ->
+                pendingRestoreUri = uri
+                showRestoreConfirmDialog = true
+            }
         }
     }
 
@@ -234,15 +240,19 @@ fun AppSettingsScreen(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
 
-            // バックアップ/リストア
+            // バックアップ/リストア（Premium機能）
             item {
-                SettingsActionItem(
+                SettingsPremiumItem(
                     title = stringResource(R.string.export_backup),
                     description = stringResource(R.string.export_backup_desc),
                     onClick = {
-                        val shareIntent = backupManager.createShareIntent()
-                        val chooser = Intent.createChooser(shareIntent, context.getString(R.string.backup_share_title))
-                        context.startActivity(chooser)
+                        if (isPremium) {
+                            val shareIntent = backupManager.createShareIntent()
+                            val chooser = Intent.createChooser(shareIntent, context.getString(R.string.backup_share_title))
+                            context.startActivity(chooser)
+                        } else {
+                            showPremiumDialog = true
+                        }
                     }
                 )
             }
@@ -252,11 +262,20 @@ fun AppSettingsScreen(
             }
 
             item {
-                SettingsActionItem(
+                SettingsPremiumItem(
                     title = stringResource(R.string.import_backup),
                     description = stringResource(R.string.import_backup_desc),
                     onClick = {
-                        filePickerLauncher.launch("application/json")
+                        if (isPremium) {
+                            val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                                addCategory(Intent.CATEGORY_OPENABLE)
+                                type = "*/*"
+                                putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+                            }
+                            filePickerLauncher.launch(intent)
+                        } else {
+                            showPremiumDialog = true
+                        }
                     }
                 )
             }
@@ -292,7 +311,7 @@ fun AppSettingsScreen(
 
             // プライバシーポリシー
             item {
-                SettingsActionItem(
+                SettingsLinkItem(
                     title = stringResource(R.string.privacy_policy),
                     description = stringResource(R.string.privacy_policy_desc),
                     onClick = {
@@ -308,10 +327,49 @@ fun AppSettingsScreen(
 
             // バージョン情報
             item {
+                val buildType = if (BuildConfig.DEBUG) "debug" else "release"
                 SettingsInfoItem(
                     title = stringResource(R.string.version),
-                    value = "1.0.0"
+                    value = "${BuildConfig.VERSION_NAME} ($buildType)"
                 )
+            }
+
+            // デバッグセクション（DEBUGビルドのみ表示）
+            if (BuildConfig.DEBUG) {
+                item {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                }
+
+                item {
+                    Text(
+                        text = "Debug Options",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+
+                item {
+                    SettingsSwitchItem(
+                        title = "Debug Premium",
+                        description = "強制的にプレミアム状態にする",
+                        checked = debugPremiumEnabled,
+                        onCheckedChange = onDebugPremiumChange
+                    )
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                item {
+                    SettingsDangerItem(
+                        title = "Clear All Premium",
+                        description = "全てのプレミアム状態をクリア",
+                        onClick = onDebugClearAllPremium
+                    )
+                }
             }
         }
     }
@@ -699,7 +757,15 @@ private fun SettingsSwitchItem(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (enabled) {
+                    Modifier.clickable { onCheckedChange(!checked) }
+                } else {
+                    Modifier
+                }
+            ),
         colors = CardDefaults.cardColors(
             containerColor = if (enabled) {
                 MaterialTheme.colorScheme.surface
@@ -784,7 +850,7 @@ private fun SettingsPremiumItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -799,20 +865,20 @@ private fun SettingsPremiumItem(
                         text = title,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Premium",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.tertiary
+                        color = Color(0xFFFF9800) // オレンジ
                     )
                 }
                 Text(
                     text = description,
                     fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -827,16 +893,8 @@ private fun SettingsPremiumSelectItem(
     isPremiumActive: Boolean,
     onClick: () -> Unit
 ) {
-    val containerColor = if (isPremiumActive) {
-        MaterialTheme.colorScheme.surface
-    } else {
-        MaterialTheme.colorScheme.tertiaryContainer
-    }
-    val contentColor = if (isPremiumActive) {
-        MaterialTheme.colorScheme.onSurface
-    } else {
-        MaterialTheme.colorScheme.onTertiaryContainer
-    }
+    val containerColor = MaterialTheme.colorScheme.surface
+    val contentColor = MaterialTheme.colorScheme.onSurface
 
     Card(
         modifier = Modifier
@@ -864,7 +922,7 @@ private fun SettingsPremiumSelectItem(
                         text = "Premium",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.tertiary
+                        color = Color(0xFFFF9800) // オレンジ
                     )
                 }
                 Text(
@@ -901,7 +959,15 @@ private fun SettingsPremiumSwitchItem(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (enabled) {
+                    Modifier.clickable { onCheckedChange(!checked) }
+                } else {
+                    Modifier
+                }
+            ),
         colors = CardDefaults.cardColors(
             containerColor = if (enabled) {
                 MaterialTheme.colorScheme.surface
@@ -932,7 +998,7 @@ private fun SettingsPremiumSwitchItem(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (enabled) {
-                                MaterialTheme.colorScheme.tertiary
+                                Color(0xFFFF9800) // オレンジ
                             } else {
                                 MaterialTheme.colorScheme.outline
                             }
@@ -1055,6 +1121,42 @@ private fun SettingsDangerItem(
                     text = description,
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsLinkItem(
+    title: String,
+    description: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = description,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

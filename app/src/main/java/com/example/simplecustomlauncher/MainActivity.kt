@@ -1,6 +1,7 @@
 package com.example.simplecustomlauncher
 
 import android.content.Intent
+import com.example.simplecustomlauncher.BuildConfig
 import android.content.pm.LauncherApps
 import android.os.Bundle
 import android.util.Log
@@ -84,6 +85,7 @@ class MainActivity : ComponentActivity() {
             }
         )
         billingManager.initialize()
+        Log.d("Billing", "MainActivity: v${BuildConfig.VERSION_NAME} 起動 Premium=${premiumManager.isPremiumActive()}")
 
         // AdManager 初期化
         adManager = AdManager(this)
@@ -342,6 +344,14 @@ fun MainLauncherScreen(
                     viewModel.navigateToHome()
                 },
                 isPremium = viewModel.isPremium,
+                onWatchAd = {
+                    activity?.let { viewModel.showRewardedAd(it) }
+                },
+                onPurchase = {
+                    activity?.let { viewModel.launchPurchase(it) }
+                },
+                formattedPrice = viewModel.getFormattedPrice(),
+                isAdReady = viewModel.isAdReady(),
                 onBack = { viewModel.navigateToHome() }
             )
         }
@@ -376,7 +386,10 @@ fun MainLauncherScreen(
                 },
                 formattedPriceProvider = { viewModel.getFormattedPrice() },
                 isAdReadyProvider = { viewModel.isAdReady() },
-                onRestoreComplete = { viewModel.refresh() }
+                onRestoreComplete = { viewModel.refresh() },
+                debugPremiumEnabled = viewModel.debugPremiumEnabled,
+                onDebugPremiumChange = { viewModel.setDebugPremium(it) },
+                onDebugClearAllPremium = { viewModel.clearAllPremiumStatus() }
             )
         }
 
