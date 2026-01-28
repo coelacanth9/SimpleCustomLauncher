@@ -82,9 +82,8 @@ class ShortcutRepository(private val context: Context) {
     fun savePlacement(placement: ShortcutPlacement) {
         synchronized(placementLock) {
             val placements = getAllPlacementsInternal().toMutableList()
-            // 同じショートカットの既存配置を削除
-            placements.removeAll { it.shortcutId == placement.shortcutId }
-            // 同じ位置（ページ+行+列）の既存配置も削除（上書き）
+            // 同じ位置（ページ+行+列）の既存配置を削除（上書き）
+            // 注: 同じショートカットを別ページに配置することは許可する
             placements.removeAll {
                 it.pageIndex == placement.pageIndex &&
                 it.row == placement.row &&

@@ -1293,8 +1293,16 @@ private fun ColorSetCard(
     onSelectColors: (backgroundColor: String?, textColor: String?) -> Unit,
     onPremiumRequired: () -> Unit = {}
 ) {
-    val containerColor = MaterialTheme.colorScheme.surface
-    val contentColor = MaterialTheme.colorScheme.onSurface
+    val containerColor = if (isPremium) {
+        MaterialTheme.colorScheme.surface
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+    val contentColor = if (isPremium) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.outline
+    }
 
     Card(
         modifier = Modifier
@@ -1328,7 +1336,7 @@ private fun ColorSetCard(
                     text = "Premium",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFFF9800) // オレンジ
+                    color = Color(0xFFFF9800) // オレンジ（常に目立つ）
                 )
             }
 

@@ -214,7 +214,7 @@ fun AppSettingsScreen(
                     title = stringResource(R.string.page_loop),
                     description = stringResource(R.string.page_loop_desc),
                     checked = loopPagingEnabled,
-                    enabled = isPremium && pageCount > 1,
+                    enabled = isPremium,
                     isPremiumFeature = true,
                     onCheckedChange = {
                         loopPagingEnabled = it
@@ -245,6 +245,7 @@ fun AppSettingsScreen(
                 SettingsPremiumItem(
                     title = stringResource(R.string.export_backup),
                     description = stringResource(R.string.export_backup_desc),
+                    isPremiumActive = isPremium,
                     onClick = {
                         if (isPremium) {
                             val shareIntent = backupManager.createShareIntent()
@@ -265,12 +266,12 @@ fun AppSettingsScreen(
                 SettingsPremiumItem(
                     title = stringResource(R.string.import_backup),
                     description = stringResource(R.string.import_backup_desc),
+                    isPremiumActive = isPremium,
                     onClick = {
                         if (isPremium) {
-                            val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                                 addCategory(Intent.CATEGORY_OPENABLE)
                                 type = "*/*"
-                                putExtra(Intent.EXTRA_LOCAL_ONLY, true)
                             }
                             filePickerLauncher.launch(intent)
                         } else {
@@ -844,57 +845,19 @@ private fun SettingsDisabledItem(
 private fun SettingsPremiumItem(
     title: String,
     description: String,
+    isPremiumActive: Boolean = false,
     onClick: () -> Unit
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = title,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Premium",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFFFF9800) // オレンジ
-                    )
-                }
-                Text(
-                    text = description,
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
+    val containerColor = if (isPremiumActive) {
+        MaterialTheme.colorScheme.surface
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
     }
-}
-
-@Composable
-private fun SettingsPremiumSelectItem(
-    title: String,
-    description: String,
-    currentValue: String?,
-    isPremiumActive: Boolean,
-    onClick: () -> Unit
-) {
-    val containerColor = MaterialTheme.colorScheme.surface
-    val contentColor = MaterialTheme.colorScheme.onSurface
+    val contentColor = if (isPremiumActive) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.outline
+    }
 
     Card(
         modifier = Modifier
@@ -922,7 +885,65 @@ private fun SettingsPremiumSelectItem(
                         text = "Premium",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFFFF9800) // オレンジ
+                        color = Color(0xFFFF9800) // オレンジ（常に目立つ）
+                    )
+                }
+                Text(
+                    text = description,
+                    fontSize = 14.sp,
+                    color = contentColor.copy(alpha = 0.8f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsPremiumSelectItem(
+    title: String,
+    description: String,
+    currentValue: String?,
+    isPremiumActive: Boolean,
+    onClick: () -> Unit
+) {
+    val containerColor = if (isPremiumActive) {
+        MaterialTheme.colorScheme.surface
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+    val contentColor = if (isPremiumActive) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.outline
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = title,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = contentColor
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Premium",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFFF9800) // オレンジ（常に目立つ）
                     )
                 }
                 Text(
