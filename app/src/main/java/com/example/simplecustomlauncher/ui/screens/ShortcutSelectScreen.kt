@@ -1012,6 +1012,9 @@ private fun ShortcutCard(
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     onClick: () -> Unit
 ) {
+    val context = LocalContext.current
+    val shortcutHelper = remember { ShortcutHelper(context) }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -1023,23 +1026,41 @@ private fun ShortcutCard(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = when (shortcut.type) {
-                    ShortcutType.APP -> "📱"
-                    ShortcutType.PHONE -> "📞"
-                    ShortcutType.SMS -> "💬"
-                    ShortcutType.DIALER -> "📞"
-                    ShortcutType.INTENT -> "🔗"
-                    ShortcutType.CALENDAR -> "📅"
-                    ShortcutType.MEMO -> "📝"
-                    ShortcutType.SETTINGS -> "⚙️"
-                    ShortcutType.ALL_APPS -> "📱"
-                    ShortcutType.DATE_DISPLAY -> "📆"
-                    ShortcutType.TIME_DISPLAY -> "🕐"
-                    ShortcutType.EMPTY -> ""
-                },
-                fontSize = 24.sp
-            )
+            // APP/INTENTは実際のアイコン、それ以外は絵文字
+            when (shortcut.type) {
+                ShortcutType.APP, ShortcutType.INTENT -> {
+                    val appIcon = remember(shortcut.packageName) {
+                        shortcut.packageName?.let { shortcutHelper.getAppIcon(it) }
+                    }
+                    if (appIcon != null) {
+                        Image(
+                            bitmap = appIcon.toBitmap(64, 64).asImageBitmap(),
+                            contentDescription = shortcut.label,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    } else {
+                        Text(text = "📱", fontSize = 24.sp)
+                    }
+                }
+                else -> {
+                    Text(
+                        text = when (shortcut.type) {
+                            ShortcutType.PHONE -> "📞"
+                            ShortcutType.SMS -> "💬"
+                            ShortcutType.DIALER -> "📞"
+                            ShortcutType.CALENDAR -> "📅"
+                            ShortcutType.MEMO -> "📝"
+                            ShortcutType.SETTINGS -> "⚙️"
+                            ShortcutType.ALL_APPS -> "📱"
+                            ShortcutType.DATE_DISPLAY -> "📆"
+                            ShortcutType.TIME_DISPLAY -> "🕐"
+                            ShortcutType.EMPTY -> ""
+                            else -> "📱"
+                        },
+                        fontSize = 24.sp
+                    )
+                }
+            }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
