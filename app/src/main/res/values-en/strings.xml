@@ -49,7 +49,7 @@
     <string name="shortcut_type_call">Make a call</string>
     <string name="shortcut_type_sms">Send SMS</string>
     <string name="shortcut_type_date">Date</string>
-    <string name="shortcut_type_time">Clock</string>
+    <string name="shortcut_type_time">Time</string>
 
     <!-- Shortcut Add/Edit Screen -->
     <string name="add_shortcut">Add Shortcut</string>
@@ -87,9 +87,8 @@
     <string name="cannot_add_more_rows">Cannot add more rows</string>
     <string name="column_reduce_warning">* Reducing columns will unplace overflowing shortcuts</string>
     <string name="display_mode">Display mode</string>
-    <string name="display_mode_icon_text">Icon + Text</string>
-    <string name="display_mode_text_only">Text only</string>
-    <string name="tap_to_change">Tap to change</string>
+    <string name="display_mode_icon_text">Icon + Label</string>
+    <string name="display_mode_text_only">Label only</string>
     <string name="background_color">Colors</string>
     <string name="background_color_default">Default</string>
     <string name="background_color_premium">Custom colors is a premium feature</string>

@@ -1236,44 +1236,60 @@ private fun DisplayModeCard(
 ) {
     val containerColor = MaterialTheme.colorScheme.surfaceVariant
     val contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-    val modeText = if (textOnly) {
-        stringResource(R.string.display_mode_text_only)
-    } else {
-        stringResource(R.string.display_mode_icon_text)
-    }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onToggle),
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = containerColor),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp)
         ) {
-            Column {
-                Text(
-                    text = stringResource(R.string.display_mode),
-                    fontSize = 14.sp,
-                    color = contentColor.copy(alpha = 0.7f)
-                )
-                Text(
-                    text = modeText,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = contentColor
-                )
-            }
             Text(
-                text = stringResource(R.string.tap_to_change),
-                fontSize = 12.sp,
-                color = contentColor.copy(alpha = 0.7f)
+                text = stringResource(R.string.display_mode),
+                fontSize = 14.sp,
+                color = contentColor.copy(alpha = 0.7f),
+                modifier = Modifier.padding(bottom = 8.dp)
             )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { if (textOnly) onToggle() },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = !textOnly,
+                        onClick = { if (textOnly) onToggle() }
+                    )
+                    Text(
+                        text = stringResource(R.string.display_mode_icon_text),
+                        fontSize = 14.sp,
+                        color = contentColor
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { if (!textOnly) onToggle() },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = textOnly,
+                        onClick = { if (!textOnly) onToggle() }
+                    )
+                    Text(
+                        text = stringResource(R.string.display_mode_text_only),
+                        fontSize = 14.sp,
+                        color = contentColor
+                    )
+                }
+            }
         }
     }
 }

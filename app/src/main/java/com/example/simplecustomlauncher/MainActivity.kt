@@ -334,7 +334,6 @@ fun MainLauncherScreen(
                 },
                 onChangeTextOnly = { textOnly ->
                     viewModel.changeRowTextOnly(state.pageIndex, state.row, textOnly)
-                    viewModel.navigateToHome()
                 },
                 onChangeColors = { bgColor, txtColor ->
                     viewModel.changeSlotColors(state.pageIndex, state.row, state.column, bgColor, txtColor)
