@@ -67,6 +67,7 @@
     <string name="swap_with_placed">Swap with placed</string>
     <string name="place_in_slot">Place in this slot</string>
     <string name="clear_slot">Clear this slot</string>
+    <string name="clear_slot_warning">The content of this slot will be deleted. Are you sure?</string>
     <string name="item_added_to_storage">\"%s\" added to storage</string>
     <string name="item_added">\"%s\" added</string>
     <string name="name_added">\"%s\" added</string>

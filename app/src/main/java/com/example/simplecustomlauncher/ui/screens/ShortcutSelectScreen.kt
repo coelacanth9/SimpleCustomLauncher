@@ -1116,8 +1116,8 @@ private fun InternalFeatureGridItem(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val containerColor = MaterialTheme.colorScheme.surface
-    val contentColor = MaterialTheme.colorScheme.onSurface
+    val containerColor = MaterialTheme.colorScheme.surfaceVariant
+    val contentColor = MaterialTheme.colorScheme.onSurfaceVariant
     val label = stringResource(feature.labelResId)
 
     Card(

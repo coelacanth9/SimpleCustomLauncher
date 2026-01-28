@@ -67,7 +67,7 @@
     <string name="swap_with_placed">配置済みと入れ替え</string>
     <string name="place_in_slot">このスロットに配置</string>
     <string name="clear_slot">このスロットを空にする</string>
-    <string name="clear_slot_warning">このスロットの内容を削除します。よろしいですか？</string>
+    <string name="clear_slot_warning">このスロットの内容は削除されます。よろしいですか？</string>
     <string name="item_added_to_storage">「%s」を一時保管に追加しました</string>
     <string name="item_added">「%s」を追加しました</string>
     <string name="name_added">「%s」を追加しました</string>
