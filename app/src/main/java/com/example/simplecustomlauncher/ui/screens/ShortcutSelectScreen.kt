@@ -514,7 +514,7 @@ private fun LazyListScope.commonSelectContent(
                     Icons.Default.Apps,
                     contentDescription = null,
                     modifier = Modifier.size(24.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = AppTheme.extendedColors.iconAllApps
                 )
             },
             text = stringResource(R.string.select_from_app_list),
@@ -650,8 +650,9 @@ private fun SlotEditMainContent(
             onContactPicker = onContactPicker
         )
 
-        // 配置済みと入れ替え
-        if (placedShortcuts.isNotEmpty()) {
+        // 配置済みと入れ替え（一時的に無効化 - コードは残す）
+        // TODO: 機能復活時は false && を削除
+        if (false && placedShortcuts.isNotEmpty()) {
             item {
                 SectionHeader(text = stringResource(R.string.swap_with_placed))
             }

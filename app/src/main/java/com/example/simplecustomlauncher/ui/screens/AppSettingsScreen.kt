@@ -299,17 +299,18 @@ fun AppSettingsScreen(
                 )
             }
 
-            // レイアウトをクリア
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            item {
-                SettingsDangerItem(
-                    title = stringResource(R.string.clear_layout),
-                    description = stringResource(R.string.clear_layout_desc),
-                    onClick = { showClearDialog = true }
-                )
-            }
+            // 一旦機能削除のためコメントアウト。各ページでクリアできるため、一括削除が必要か疑問。
+//            // レイアウトをクリア
+//            item {
+//                Spacer(modifier = Modifier.height(8.dp))
+//            }
+//            item {
+//                SettingsDangerItem(
+//                    title = stringResource(R.string.clear_layout),
+//                    description = stringResource(R.string.clear_layout_desc),
+//                    onClick = { showClearDialog = true }
+//                )
+//            }
 
             item {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))

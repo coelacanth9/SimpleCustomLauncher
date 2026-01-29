@@ -433,18 +433,10 @@ private fun HomePageContent(
                 textOnly = rowConfig.textOnly,
                 onShortcutClick = { item ->
                     performFeedback()
-                    when (item.type) {
-                        ShortcutType.CALENDAR -> viewModel.navigateTo(MainScreenState.Calendar)
-                        ShortcutType.MEMO -> viewModel.navigateTo(MainScreenState.Memo)
-                        ShortcutType.SETTINGS -> viewModel.navigateTo(MainScreenState.AppSettings)
-                        ShortcutType.ALL_APPS -> viewModel.navigateTo(MainScreenState.AllApps)
-                        else -> {
-                            if (showConfirmDialog) {
-                                viewModel.showShortcutConfirmDialog(item)
-                            } else {
-                                viewModel.launchShortcut(context, item, shortcutHelper)
-                            }
-                        }
+                    if (showConfirmDialog) {
+                        viewModel.showShortcutConfirmDialog(item)
+                    } else {
+                        viewModel.launchShortcut(context, item, shortcutHelper)
                     }
                 },
                 onEmptyClick = { column ->

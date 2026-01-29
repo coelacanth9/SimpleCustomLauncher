@@ -45,7 +45,7 @@
     <string name="shortcut_type_calendar">カレンダー</string>
     <string name="shortcut_type_memo">メモ帳</string>
     <string name="shortcut_type_phone">電話</string>
-    <string name="shortcut_type_all_apps">すべてのアプリ</string>
+    <string name="shortcut_type_all_apps">アプリ一覧</string>
     <string name="shortcut_type_call">電話をかける</string>
     <string name="shortcut_type_sms">SMSを送る</string>
     <string name="shortcut_type_date">日付</string>
@@ -205,6 +205,11 @@
     <string name="edit_memo">メモを編集</string>
     <string name="new_memo_hint">新しいメモを入力</string>
     <string name="no_memo">メモがありません\n上の入力欄から追加してください</string>
+    <string name="memo_limit_reached">メモは%d件までです</string>
+    <string name="memo_char_count">%1$d / %2$d</string>
+    <string name="check_all">全件選択</string>
+    <string name="delete_checked">選択を削除</string>
+    <string name="delete_checked_confirm">チェック済みのメモをすべて削除しますか？</string>
 
     <!-- Default Apps -->
     <string name="app_camera">カメラ</string>

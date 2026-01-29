@@ -415,6 +415,10 @@ class MainViewModel(
 
     fun resetToDefault() {
         shortcutRepository.resetToDefault()
+        // ページ数も1に戻す
+        settingsRepository.pageCount = 1
+        // 1ページ目に移動
+        navigateToPageRequest = 0
         refresh()
     }
 
