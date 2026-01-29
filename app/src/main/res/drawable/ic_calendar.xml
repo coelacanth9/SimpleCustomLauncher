@@ -1,0 +1,45 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- カレンダー外枠（角丸） -->
+    <path
+        android:pathData="M4,4 L20,4 A2,2 0 0 1 22,6 L22,20 A2,2 0 0 1 20,22 L4,22 A2,2 0 0 1 2,20 L2,6 A2,2 0 0 1 4,4 Z"
+        android:strokeWidth="1.5"
+        android:strokeColor="#000000"
+        android:fillColor="#00000000"/>
+
+    <!-- 上部のリング -->
+    <path
+        android:pathData="M7,2 L7,5"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M17,2 L17,5"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"/>
+
+    <!-- グリッド 4x3 等間隔配置 -->
+    <!-- 1行目 (y=8-10) -->
+    <path android:pathData="M4.5,8 L6.5,8 L6.5,10 L4.5,10 Z" android:fillColor="#000000"/>
+    <path android:pathData="M8.5,8 L10.5,8 L10.5,10 L8.5,10 Z" android:fillColor="#000000"/>
+    <path android:pathData="M12.5,8 L14.5,8 L14.5,10 L12.5,10 Z" android:fillColor="#000000"/>
+    <path android:pathData="M16.5,8 L18.5,8 L18.5,10 L16.5,10 Z" android:fillColor="#000000"/>
+
+    <!-- 2行目 (y=12-14) -->
+    <path android:pathData="M4.5,12 L6.5,12 L6.5,14 L4.5,14 Z" android:fillColor="#000000"/>
+    <path android:pathData="M8.5,12 L10.5,12 L10.5,14 L8.5,14 Z" android:fillColor="#000000"/>
+    <path android:pathData="M12.5,12 L14.5,12 L14.5,14 L12.5,14 Z" android:fillColor="#000000"/>
+    <path android:pathData="M16.5,12 L18.5,12 L18.5,14 L16.5,14 Z" android:fillColor="#000000"/>
+
+    <!-- 3行目 (y=16-18) -->
+    <path android:pathData="M4.5,16 L6.5,16 L6.5,18 L4.5,18 Z" android:fillColor="#000000"/>
+    <path android:pathData="M8.5,16 L10.5,16 L10.5,18 L8.5,18 Z" android:fillColor="#000000"/>
+    <path android:pathData="M12.5,16 L14.5,16 L14.5,18 L12.5,18 Z" android:fillColor="#000000"/>
+    <path android:pathData="M16.5,16 L18.5,16 L18.5,18 L16.5,18 Z" android:fillColor="#000000"/>
+
+</vector>
