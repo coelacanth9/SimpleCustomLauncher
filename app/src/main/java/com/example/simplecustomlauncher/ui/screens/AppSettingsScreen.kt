@@ -322,7 +322,7 @@ fun AppSettingsScreen(
                     title = stringResource(R.string.privacy_policy),
                     description = stringResource(R.string.privacy_policy_desc),
                     onClick = {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/coelacanth9/SimpleCustomLauncher/blob/master/PRIVACY_POLICY.md"))
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://coelacanth9.github.io/SimpleCustomLauncher/PRIVACY_POLICY"))
                         context.startActivity(intent)
                     }
                 )
