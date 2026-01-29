@@ -676,7 +676,11 @@ class MainViewModel(
     }
 
     fun placeContact(name: String, phoneNumber: String, type: ShortcutType, pageIndex: Int, row: Int, column: Int) {
-        val item = ShortcutItem(
+        val allShortcuts = getAllShortcuts()
+        val existing = allShortcuts.find {
+            it.type == type && it.phoneNumber == phoneNumber
+        }
+        val item = existing ?: ShortcutItem(
             id = UUID.randomUUID().toString(),
             type = type,
             label = name,
