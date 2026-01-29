@@ -109,10 +109,27 @@ class MemoRepository(context: Context) {
         prefs.edit().putInt(KEY_FONT_SIZE, size).apply()
     }
 
+    fun checkAll() {
+        val memos = getMemos().map { it.copy(isChecked = true) }
+        saveMemos(memos)
+    }
+
+    fun uncheckAll() {
+        val memos = getMemos().map { it.copy(isChecked = false) }
+        saveMemos(memos)
+    }
+
+    fun deleteCheckedMemos() {
+        val memos = getMemos().filter { !it.isChecked }
+        saveMemos(memos)
+    }
+
     companion object {
         private const val PREFS_NAME = "memo_prefs"
         private const val KEY_MEMOS = "memos"
         private const val KEY_FONT_SIZE = "font_size"
         private const val DEFAULT_FONT_SIZE = 20
+        const val MAX_MEMO_LENGTH = 200
+        const val MAX_MEMO_COUNT = 100
     }
 }

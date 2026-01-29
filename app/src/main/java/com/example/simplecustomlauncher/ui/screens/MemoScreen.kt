@@ -28,6 +28,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import com.example.simplecustomlauncher.R
+import com.example.simplecustomlauncher.ui.components.DangerConfirmDialog
 import com.example.simplecustomlauncher.ui.components.SelectionDialog
 
 /**
@@ -50,6 +51,7 @@ fun MemoScreen(
     var fontSize by remember { mutableIntStateOf(repository.getFontSize()) }
     var showSettings by remember { mutableStateOf(false) }
     var editingMemo by remember { mutableStateOf<MemoItem?>(null) }
+    var showDeleteCheckedConfirm by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -67,6 +69,33 @@ fun MemoScreen(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = {
+                            if (memos.all { it.isChecked }) {
+                                repository.uncheckAll()
+                            } else {
+                                repository.checkAll()
+                            }
+                            memos = repository.getMemos()
+                        },
+                        enabled = memos.isNotEmpty()
+                    ) {
+                        Icon(
+                            if (memos.all { it.isChecked }) Icons.Default.Deselect else Icons.Default.SelectAll,
+                            contentDescription = stringResource(R.string.check_all)
+                        )
+                    }
+                    IconButton(
+                        onClick = { showDeleteCheckedConfirm = true },
+                        enabled = memos.any { it.isChecked }
+                    ) {
+                        Icon(
+                            Icons.Default.DeleteSweep,
+                            contentDescription = stringResource(R.string.delete_checked),
+                            tint = if (memos.any { it.isChecked }) MaterialTheme.colorScheme.error
+                                   else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                        )
+                    }
                     IconButton(onClick = { showSettings = true }) {
                         Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings))
                     }
@@ -88,7 +117,7 @@ fun MemoScreen(
             ) {
                 OutlinedTextField(
                     value = newMemoText,
-                    onValueChange = { newMemoText = it },
+                    onValueChange = { newMemoText = it.take(MemoRepository.MAX_MEMO_LENGTH) },
                     modifier = Modifier.weight(1f)
                                         .focusRequester(focusRequester),
                     placeholder = { Text(stringResource(R.string.new_memo_hint), fontSize = fontSize.sp) },
@@ -97,7 +126,7 @@ fun MemoScreen(
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(
                         onDone = {
-                            if (newMemoText.isNotBlank()) {
+                            if (newMemoText.isNotBlank() && memos.size < MemoRepository.MAX_MEMO_COUNT) {
                                 repository.addMemo(newMemoText.trim())
                                 memos = repository.getMemos()
                                 newMemoText = ""
@@ -106,18 +135,20 @@ fun MemoScreen(
                         }
                     ),
                     shape = RoundedCornerShape(12.dp),
-                    singleLine = true
+                    singleLine = true,
+                    supportingText = { Text("${newMemoText.length} / ${MemoRepository.MAX_MEMO_LENGTH}") }
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
                     onClick = {
-                        if (newMemoText.isNotBlank()) {
+                        if (newMemoText.isNotBlank() && memos.size < MemoRepository.MAX_MEMO_COUNT) {
                             repository.addMemo(newMemoText.trim())
                             memos = repository.getMemos()
                             newMemoText = ""
                             focusManager.clearFocus()
                         }
                     },
+                    enabled = memos.size < MemoRepository.MAX_MEMO_COUNT,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.height(56.dp)
                 ) {
@@ -165,6 +196,21 @@ fun MemoScreen(
                 }
             }
         }
+    }
+
+    // 選択削除確認ダイアログ
+    if (showDeleteCheckedConfirm) {
+        DangerConfirmDialog(
+            title = stringResource(R.string.delete_checked),
+            message = stringResource(R.string.delete_checked_confirm),
+            confirmText = stringResource(R.string.delete_action),
+            onConfirm = {
+                repository.deleteCheckedMemos()
+                memos = repository.getMemos()
+                showDeleteCheckedConfirm = false
+            },
+            onDismiss = { showDeleteCheckedConfirm = false }
+        )
     }
 
     // 設定ダイアログ
@@ -332,10 +378,11 @@ private fun EditMemoDialog(
         text = {
             OutlinedTextField(
                 value = text,
-                onValueChange = { text = it },
+                onValueChange = { text = it.take(MemoRepository.MAX_MEMO_LENGTH) },
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = LocalTextStyle.current.copy(fontSize = fontSize.sp),
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(8.dp),
+                supportingText = { Text("${text.length} / ${MemoRepository.MAX_MEMO_LENGTH}") }
             )
         },
         confirmButton = {
