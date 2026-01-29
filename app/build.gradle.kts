@@ -14,15 +14,16 @@ android {
         applicationId = "com.coelacanth9.simplecustomlauncher"
         minSdk = 33
         targetSdk = 36
-        versionCode = 10
-        versionName = "1.0.10"
+        versionCode = 11
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
