@@ -51,7 +51,7 @@ fun MemoScreen(
     var fontSize by remember { mutableIntStateOf(repository.getFontSize()) }
     var showSettings by remember { mutableStateOf(false) }
     var editingMemo by remember { mutableStateOf<MemoItem?>(null) }
-    var showDeleteCheckedConfirm by remember { mutableStateOf(false) }
+    var pendingDeleteAction by remember { mutableStateOf<(() -> Unit)?>(null) }
 
     Scaffold(
         topBar = {
@@ -86,7 +86,7 @@ fun MemoScreen(
                         )
                     }
                     IconButton(
-                        onClick = { showDeleteCheckedConfirm = true },
+                        onClick = { pendingDeleteAction = { repository.deleteCheckedMemos() } },
                         enabled = memos.any { it.isChecked }
                     ) {
                         Icon(
@@ -113,7 +113,7 @@ fun MemoScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
                 OutlinedTextField(
                     value = newMemoText,
@@ -198,18 +198,18 @@ fun MemoScreen(
         }
     }
 
-    // 選択削除確認ダイアログ
-    if (showDeleteCheckedConfirm) {
+    // 削除確認ダイアログ（個別・一括共通）
+    if (pendingDeleteAction != null) {
         DangerConfirmDialog(
-            title = stringResource(R.string.delete_checked),
+            title = stringResource(R.string.delete),
             message = stringResource(R.string.delete_checked_confirm),
             confirmText = stringResource(R.string.delete_action),
             onConfirm = {
-                repository.deleteCheckedMemos()
+                pendingDeleteAction?.invoke()
                 memos = repository.getMemos()
-                showDeleteCheckedConfirm = false
+                pendingDeleteAction = null
             },
-            onDismiss = { showDeleteCheckedConfirm = false }
+            onDismiss = { pendingDeleteAction = null }
         )
     }
 
@@ -312,6 +312,7 @@ private fun MemoItemCard(
             }
         }
     }
+
 }
 
 @Composable
