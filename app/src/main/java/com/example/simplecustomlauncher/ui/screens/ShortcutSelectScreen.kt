@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Email
@@ -177,6 +178,7 @@ fun ShortcutAddScreen(
     onSelectShortcut: (ShortcutData) -> Unit,
     onSelectInternal: (InternalFeature) -> Unit,
     onSelectContact: (name: String, phoneNumber: String, type: ShortcutType) -> Unit = { _, _, _ -> },
+    onDeleteUnplaced: ((ShortcutItem) -> Unit)? = null,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -184,9 +186,23 @@ fun ShortcutAddScreen(
 
     var screenState by remember { mutableStateOf<SelectScreenState>(SelectScreenState.Main) }
     var shortcuts by remember { mutableStateOf<List<ShortcutData>>(emptyList()) }
+    var shortcutToDelete by remember { mutableStateOf<ShortcutItem?>(null) }
 
     // 連絡先ピッカー（カスタムフック使用）
     val contactPicker = rememberContactPicker { /* not used here */ }
+
+    // 未配置ショートカット削除確認ダイアログ
+    shortcutToDelete?.let { shortcut ->
+        LargeDangerConfirmDialog(
+            title = stringResource(R.string.delete_unplaced_shortcut),
+            message = stringResource(R.string.delete_unplaced_confirm),
+            onConfirm = {
+                onDeleteUnplaced?.invoke(shortcut)
+                shortcutToDelete = null
+            },
+            onDismiss = { shortcutToDelete = null }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -224,6 +240,9 @@ fun ShortcutAddScreen(
                     onSelectInternal = onSelectInternal,
                     onGoToAppList = { screenState = SelectScreenState.AppList },
                     onContactPicker = contactPicker.startPicker,
+                    onDeleteUnplaced = onDeleteUnplaced?.let { callback ->
+                        { shortcut: ShortcutItem -> shortcutToDelete = shortcut }
+                    },
                     modifier = Modifier.padding(paddingValues)
                 )
             }
@@ -288,6 +307,7 @@ fun SlotEditScreen(
     onSelectShortcut: (ShortcutData) -> Unit,
     onSelectInternal: (InternalFeature) -> Unit,
     onSelectContact: (name: String, phoneNumber: String, type: ShortcutType) -> Unit = { _, _, _ -> },
+    onDeleteUnplaced: ((ShortcutItem) -> Unit)? = null,
     onClear: () -> Unit,
     onChangeColumns: (Int) -> Unit,
     onChangeTextOnly: (Boolean) -> Unit = {},
@@ -309,9 +329,23 @@ fun SlotEditScreen(
     var showDeleteRowDialog by remember { mutableStateOf(false) }
     var showClearSlotDialog by remember { mutableStateOf(false) }
     var showPremiumDialog by remember { mutableStateOf(false) }
+    var shortcutToDelete by remember { mutableStateOf<ShortcutItem?>(null) }
 
     var screenState by remember { mutableStateOf<SelectScreenState>(SelectScreenState.Main) }
     var shortcuts by remember { mutableStateOf<List<ShortcutData>>(emptyList()) }
+
+    // 未配置ショートカット削除確認ダイアログ
+    shortcutToDelete?.let { shortcut ->
+        LargeDangerConfirmDialog(
+            title = stringResource(R.string.delete_unplaced_shortcut),
+            message = stringResource(R.string.delete_unplaced_confirm),
+            onConfirm = {
+                onDeleteUnplaced?.invoke(shortcut)
+                shortcutToDelete = null
+            },
+            onDismiss = { shortcutToDelete = null }
+        )
+    }
 
     // 行削除確認ダイアログ
     if (showDeleteRowDialog) {
@@ -399,6 +433,9 @@ fun SlotEditScreen(
                     onSelectInternal = onSelectInternal,
                     onGoToAppList = { screenState = SelectScreenState.AppList },
                     onContactPicker = contactPicker.startPicker,
+                    onDeleteUnplaced = onDeleteUnplaced?.let { callback ->
+                        { shortcut: ShortcutItem -> shortcutToDelete = shortcut }
+                    },
                     onClear = { showClearSlotDialog = true },
                     onShowColumnsDialog = { showColumnsDialog = true },
                     onChangeTextOnly = onChangeTextOnly,
@@ -504,7 +541,8 @@ private fun LazyListScope.commonSelectContent(
     onSelectUnplaced: (ShortcutItem) -> Unit,
     onSelectInternal: (InternalFeature) -> Unit,
     onGoToAppList: () -> Unit,
-    onContactPicker: () -> Unit
+    onContactPicker: () -> Unit,
+    onDeleteUnplaced: ((ShortcutItem) -> Unit)? = null
 ) {
     // アプリ一覧へ
     item {
@@ -583,7 +621,8 @@ private fun LazyListScope.commonSelectContent(
                 shortcut = shortcut,
                 subtitleResId = R.string.tap_to_place,
                 backgroundColor = MaterialTheme.colorScheme.surface,
-                onClick = { onSelectUnplaced(shortcut) }
+                onClick = { onSelectUnplaced(shortcut) },
+                onDelete = onDeleteUnplaced?.let { callback -> { callback(shortcut) } }
             )
         }
     }
@@ -596,6 +635,7 @@ private fun MainSelectContent(
     onSelectInternal: (InternalFeature) -> Unit,
     onGoToAppList: () -> Unit,
     onContactPicker: () -> Unit,
+    onDeleteUnplaced: ((ShortcutItem) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -608,7 +648,8 @@ private fun MainSelectContent(
             onSelectUnplaced = onSelectUnplaced,
             onSelectInternal = onSelectInternal,
             onGoToAppList = onGoToAppList,
-            onContactPicker = onContactPicker
+            onContactPicker = onContactPicker,
+            onDeleteUnplaced = onDeleteUnplaced
         )
     }
 }
@@ -627,6 +668,7 @@ private fun SlotEditMainContent(
     onSelectInternal: (InternalFeature) -> Unit,
     onGoToAppList: () -> Unit,
     onContactPicker: () -> Unit,
+    onDeleteUnplaced: ((ShortcutItem) -> Unit)? = null,
     onClear: () -> Unit,
     onShowColumnsDialog: () -> Unit,
     onChangeTextOnly: (Boolean) -> Unit = {},
@@ -647,7 +689,8 @@ private fun SlotEditMainContent(
             onSelectUnplaced = onSelectUnplaced,
             onSelectInternal = onSelectInternal,
             onGoToAppList = onGoToAppList,
-            onContactPicker = onContactPicker
+            onContactPicker = onContactPicker,
+            onDeleteUnplaced = onDeleteUnplaced
         )
 
         // 配置済みと入れ替え（一時的に無効化 - コードは残す）
@@ -1023,7 +1066,8 @@ private fun ShortcutCard(
     subtitleResId: Int,
     backgroundColor: Color,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDelete: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val shortcutHelper = remember { ShortcutHelper(context) }
@@ -1197,6 +1241,16 @@ private fun ShortcutCard(
                         text = stringResource(subtitleResId),
                         fontSize = 12.sp,
                         color = contentColor.copy(alpha = 0.7f)
+                    )
+                }
+            }
+            if (onDelete != null) {
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = stringResource(R.string.delete_unplaced_shortcut),
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

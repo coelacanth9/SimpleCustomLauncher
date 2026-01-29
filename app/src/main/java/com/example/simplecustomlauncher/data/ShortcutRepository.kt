@@ -467,6 +467,33 @@ class ShortcutRepository(private val context: Context) {
         return shortcutId to packageName
     }
 
+    fun deletePinShortcutInfo(itemId: String) {
+        pinPrefs.edit()
+            .remove("${itemId}_shortcut_id")
+            .remove("${itemId}_package")
+            .apply()
+    }
+
+    /**
+     * 孤立したピンショートカット情報を検出して返す。
+     * ショートカット本体が削除済みなのにpin_prefsに残っているエントリを抽出する。
+     * @return List<Triple<itemId, pinShortcutId, packageName>>
+     */
+    fun findOrphanedPinShortcuts(): List<Triple<String, String, String>> {
+        val shortcuts = getAllShortcuts()
+        val allKeys = pinPrefs.all.keys
+        val itemIds = allKeys
+            .filter { it.endsWith("_shortcut_id") }
+            .map { it.removeSuffix("_shortcut_id") }
+
+        return itemIds.mapNotNull { itemId ->
+            if (shortcuts.containsKey(itemId)) return@mapNotNull null
+            val pinShortcutId = pinPrefs.getString("${itemId}_shortcut_id", null) ?: return@mapNotNull null
+            val packageName = pinPrefs.getString("${itemId}_package", null) ?: return@mapNotNull null
+            Triple(itemId, pinShortcutId, packageName)
+        }
+    }
+
     companion object {
         private const val PREFS_NAME = "launcher_shortcuts"
         private const val PIN_PREFS_NAME = "pin_shortcuts"

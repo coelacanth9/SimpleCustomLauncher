@@ -186,6 +186,11 @@ fun MainLauncherScreen(
         factory = MainViewModelFactory(context, billingManager, adManager)
     )
 
+    // 起動時に孤立ピンショートカットをクリーンアップ
+    LaunchedEffect(Unit) {
+        viewModel.cleanupOrphanedPinShortcuts(context)
+    }
+
     // 購入完了を監視
     val purchaseState by billingManager.purchaseState.collectAsState()
     LaunchedEffect(purchaseState) {
@@ -278,6 +283,9 @@ fun MainLauncherScreen(
                     }
                     viewModel.navigateToHome()
                 },
+                onDeleteUnplaced = { shortcut ->
+                    viewModel.deleteUnplacedShortcut(context, shortcut.id)
+                },
                 onBack = { viewModel.navigateToHome() }
             )
         }
@@ -323,6 +331,9 @@ fun MainLauncherScreen(
                 onSelectContact = { name, phoneNumber, type ->
                     viewModel.placeContact(name, phoneNumber, type, state.pageIndex, state.row, state.column)
                     viewModel.navigateToHome()
+                },
+                onDeleteUnplaced = { shortcut ->
+                    viewModel.deleteUnplacedShortcut(context, shortcut.id)
                 },
                 onClear = {
                     state.currentShortcut?.let { viewModel.clearSlot(it) }

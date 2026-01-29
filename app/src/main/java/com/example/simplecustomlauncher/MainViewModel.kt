@@ -3,6 +3,7 @@ package com.example.simplecustomlauncher
 import android.app.Activity
 import android.content.Context
 import android.content.pm.LauncherApps
+import android.content.pm.LauncherApps.ShortcutQuery
 import android.os.Process
 import android.util.Log
 import androidx.compose.runtime.getValue
@@ -601,6 +602,7 @@ class MainViewModel(
     }
 
     companion object {
+        private const val TAG = "MainViewModel"
         const val MAX_ROWS_PER_PAGE = 7
     }
 
@@ -664,7 +666,13 @@ class MainViewModel(
     }
 
     fun placeIntent(shortLabel: String, packageName: String, shortcutId: String, pageIndex: Int, row: Int, column: Int) {
-        val item = ShortcutItem(
+        // 同じショートカットが既にあれば再利用
+        val allShortcuts = getAllShortcuts()
+        val existing = allShortcuts.find {
+            it.type == ShortcutType.INTENT && it.packageName == packageName &&
+                shortcutRepository.getPinShortcutInfo(it.id).first == shortcutId
+        }
+        val item = existing ?: ShortcutItem(
             id = UUID.randomUUID().toString(),
             type = ShortcutType.INTENT,
             label = shortLabel,
@@ -719,6 +727,65 @@ class MainViewModel(
                 column = column
             )
         )
+        refresh()
+    }
+
+    /**
+     * 孤立したピンショートカット情報をクリーンアップする（起動時に呼ぶ）
+     */
+    fun cleanupOrphanedPinShortcuts(context: Context) {
+        val orphaned = shortcutRepository.findOrphanedPinShortcuts()
+        if (orphaned.isEmpty()) return
+
+        val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
+        val byPackage = orphaned.groupBy { it.third }
+        for ((packageName, entries) in byPackage) {
+            val orphanedPinIds = entries.map { it.second }.toSet()
+            try {
+                val query = ShortcutQuery()
+                    .setPackage(packageName)
+                    .setQueryFlags(ShortcutQuery.FLAG_MATCH_PINNED)
+                val pinned = launcherApps.getShortcuts(query, Process.myUserHandle())
+                val remainingIds = pinned
+                    ?.map { it.id }
+                    ?.filter { it !in orphanedPinIds }
+                    ?: emptyList()
+                launcherApps.pinShortcuts(packageName, remainingIds, Process.myUserHandle())
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to cleanup pinned shortcuts for $packageName", e)
+            }
+        }
+        for ((itemId, _, _) in orphaned) {
+            shortcutRepository.deletePinShortcutInfo(itemId)
+        }
+    }
+
+    fun deleteUnplacedShortcut(context: Context, id: String) {
+        val shortcut = shortcutRepository.getShortcut(id)
+        // INTENT型の場合、Androidシステムからもピン解除する
+        if (shortcut?.type == ShortcutType.INTENT) {
+            val (pinShortcutId, pinPackageName) = shortcutRepository.getPinShortcutInfo(id)
+            if (pinShortcutId != null && pinPackageName != null) {
+                try {
+                    val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
+                    val query = ShortcutQuery()
+                        .setPackage(pinPackageName)
+                        .setQueryFlags(ShortcutQuery.FLAG_MATCH_PINNED)
+                    val pinned = launcherApps.getShortcuts(query, Process.myUserHandle())
+                    val remainingIds = pinned
+                        ?.map { it.id }
+                        ?.filter { it != pinShortcutId }
+                        ?: emptyList()
+                    launcherApps.pinShortcuts(pinPackageName, remainingIds, Process.myUserHandle())
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to unpin shortcut", e)
+                    showError(ErrorMessage.LaunchFailed)
+                    return
+                }
+            }
+            shortcutRepository.deletePinShortcutInfo(id)
+        }
+        shortcutRepository.deleteShortcut(id)
         refresh()
     }
 

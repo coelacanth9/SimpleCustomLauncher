@@ -64,6 +64,8 @@
     <string name="shortcut">ショートカット</string>
     <string name="shortcut_count">ショートカット (%d件)</string>
     <string name="unplaced_shortcuts">未配置ショートカット</string>
+    <string name="delete_unplaced_shortcut">ショートカットを削除</string>
+    <string name="delete_unplaced_confirm">このショートカットを完全に削除しますか？</string>
     <string name="swap_with_placed">配置済みと入れ替え</string>
     <string name="place_in_slot">このスロットに配置</string>
     <string name="clear_slot">このスロットを空にする</string>
