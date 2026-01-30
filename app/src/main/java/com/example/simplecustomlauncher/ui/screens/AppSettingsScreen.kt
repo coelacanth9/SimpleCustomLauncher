@@ -316,6 +316,22 @@ fun AppSettingsScreen(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
 
+            // 使い方
+            item {
+                SettingsLinkItem(
+                    title = stringResource(R.string.how_to_use),
+                    description = stringResource(R.string.how_to_use_desc),
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://coelacanth9.github.io/SimpleCustomLauncher/"))
+                        context.startActivity(intent)
+                    }
+                )
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             // プライバシーポリシー
             item {
                 SettingsLinkItem(

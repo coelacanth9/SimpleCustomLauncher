@@ -3,6 +3,7 @@ package com.example.simplecustomlauncher
 import android.content.Intent
 import com.example.simplecustomlauncher.BuildConfig
 import android.content.pm.LauncherApps
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -36,6 +37,7 @@ import com.example.simplecustomlauncher.data.ShortcutPlacement
 import com.example.simplecustomlauncher.data.ShortcutRepository
 import com.example.simplecustomlauncher.data.ShortcutType
 import com.example.simplecustomlauncher.data.ThemeMode
+import com.example.simplecustomlauncher.ui.components.LargeConfirmDialog
 import com.example.simplecustomlauncher.ui.screens.AllAppsScreen
 import com.example.simplecustomlauncher.ui.screens.AppSettingsScreen
 import com.example.simplecustomlauncher.ui.screens.CalendarFullScreen
@@ -221,12 +223,27 @@ fun MainLauncherScreen(
     // Snackbar
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // 初回起動時の使い方案内
+    val settingsRepository = remember { SettingsRepository(context) }
+    var permissionHandled by remember { mutableStateOf(false) }
+    var showWelcomeDialog by remember { mutableStateOf(false) }
+
     // 権限リクエスト
     RequestPermissions(
         context = context,
         permissions = CALENDAR_PERMISSIONS,
-        onResult = { isGranted -> hasPermission = isGranted }
+        onResult = { isGranted ->
+            hasPermission = isGranted
+            permissionHandled = true
+        }
     )
+
+    // 権限ダイアログ完了後に初回案内を表示
+    LaunchedEffect(permissionHandled) {
+        if (permissionHandled && !settingsRepository.onboardingShown) {
+            showWelcomeDialog = true
+        }
+    }
 
     // 祝日データ（カレンダー画面用）
     val holidayMap = remember(hasPermission) {
@@ -240,6 +257,26 @@ fun MainLauncherScreen(
 
     // ShortcutHelper
     val shortcutHelper = remember { ShortcutHelper(context) }
+
+    // 初回起動時の使い方案内ダイアログ
+    if (showWelcomeDialog) {
+        LargeConfirmDialog(
+            title = context.getString(R.string.welcome_title),
+            message = context.getString(R.string.welcome_message),
+            confirmText = context.getString(R.string.open_how_to_use),
+            cancelText = context.getString(R.string.close),
+            onConfirm = {
+                settingsRepository.onboardingShown = true
+                showWelcomeDialog = false
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://coelacanth9.github.io/SimpleCustomLauncher/"))
+                context.startActivity(intent)
+            },
+            onDismiss = {
+                settingsRepository.onboardingShown = true
+                showWelcomeDialog = false
+            }
+        )
+    }
 
     // 画面遷移
     when (val state = viewModel.screenState) {

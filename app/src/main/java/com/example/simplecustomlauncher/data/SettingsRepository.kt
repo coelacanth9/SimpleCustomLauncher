@@ -86,6 +86,13 @@ class SettingsRepository(context: Context) {
         get() = prefs.getInt(KEY_PAGE_COUNT, 1).coerceIn(1, MAX_PAGES)
         set(value) = prefs.edit().putInt(KEY_PAGE_COUNT, value.coerceIn(1, MAX_PAGES)).apply()
 
+    /**
+     * 初回起動時のオンボーディングダイアログを表示済みか
+     */
+    var onboardingShown: Boolean
+        get() = prefs.getBoolean(KEY_ONBOARDING_SHOWN, false)
+        set(value) = prefs.edit().putBoolean(KEY_ONBOARDING_SHOWN, value).apply()
+
     companion object {
         private const val PREFS_NAME = "launcher_settings"
         private const val KEY_TAP_MODE = "tap_mode"
@@ -94,6 +101,7 @@ class SettingsRepository(context: Context) {
         private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_LOOP_PAGING = "loop_paging"
         private const val KEY_PAGE_COUNT = "page_count"
+        private const val KEY_ONBOARDING_SHOWN = "onboarding_shown"
 
         const val MAX_PAGES = 5
     }
