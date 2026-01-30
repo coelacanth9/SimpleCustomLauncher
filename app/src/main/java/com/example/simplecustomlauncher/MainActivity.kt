@@ -332,15 +332,17 @@ fun MainLauncherScreen(
         )
     }
 
-    // サブ画面 or 編集モードでシステムの戻るボタン/ジェスチャー → ホームに戻る
-    BackHandler(
-        enabled = viewModel.screenState !is MainScreenState.Home || viewModel.isEditMode
-    ) {
-        if (viewModel.isEditMode) {
-            viewModel.exitEditMode()
-        } else {
+    // システムの戻るボタン/ジェスチャーの処理
+    // ランチャーはルートなので常にバックを消費する
+    BackHandler(enabled = true) {
+        if (viewModel.screenState !is MainScreenState.Home) {
             viewModel.navigateToHome()
+        } else if (viewModel.isEditMode) {
+            viewModel.exitEditMode()
+        } else if (viewModel.currentPageIndex > 0) {
+            viewModel.navigateToPage(0)
         }
+        // 1ページ目のホーム画面 → 何もしない（バックを消費して終了を防ぐ）
     }
 
     // 画面遷移

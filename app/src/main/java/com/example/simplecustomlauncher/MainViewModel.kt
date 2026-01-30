@@ -570,6 +570,10 @@ class MainViewModel(
         navigateToPageRequest = null
     }
 
+    fun navigateToPage(pageIndex: Int) {
+        navigateToPageRequest = pageIndex
+    }
+
     /**
      * 新しいページを追加して行を追加
      */
