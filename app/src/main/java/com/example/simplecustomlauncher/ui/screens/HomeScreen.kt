@@ -7,6 +7,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -31,6 +34,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
@@ -177,12 +181,74 @@ fun HomeScreen(
                 onAppSettings = { viewModel.navigateTo(MainScreenState.AppSettings) }
             )
 
-            // ホームコンテンツ
-            Box(modifier = Modifier.weight(1f)) {
+            // ホームコンテンツ（上スワイプでアプリ一覧を表示）
+            var swipeActivated by remember { mutableStateOf(false) }
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .pointerInput(viewModel.isEditMode) {
+                        var totalDrag = 0f
+                        detectVerticalDragGestures(
+                            onDragStart = {
+                                totalDrag = 0f
+                                swipeActivated = false
+                            },
+                            onVerticalDrag = { _, dragAmount ->
+                                totalDrag += dragAmount
+                                swipeActivated = totalDrag < -100f
+                            },
+                            onDragEnd = {
+                                if (totalDrag < -100f) {
+                                    if (!viewModel.isEditMode) {
+                                        viewModel.navigateTo(MainScreenState.AllApps)
+                                    } else {
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            context.getString(R.string.cannot_open_all_apps_in_edit_mode),
+                                            android.widget.Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                }
+                                swipeActivated = false
+                            },
+                            onDragCancel = {
+                                swipeActivated = false
+                            }
+                        )
+                    }
+            ) {
                 HomeContent(
                     viewModel = viewModel,
                     shortcutHelper = shortcutHelper
                 )
+
+                // 上スワイプ時のインジケータ（画面下部に矢印＋テキスト）
+                if (swipeActivated) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentAlignment = Alignment.BottomCenter
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(bottom = 48.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.KeyboardArrowUp,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = stringResource(R.string.shortcut_type_all_apps),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
             }
         }
     }

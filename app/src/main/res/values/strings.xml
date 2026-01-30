@@ -63,7 +63,7 @@
     <string name="no_shortcuts_for_app">このアプリにはショートカットがありません</string>
     <string name="shortcut">ショートカット</string>
     <string name="shortcut_count">ショートカット (%d件)</string>
-    <string name="unplaced_shortcuts">未配置ショートカット</string>
+    <string name="unplaced_shortcuts">一時保管</string>
     <string name="delete_unplaced_shortcut">ショートカットを削除</string>
     <string name="delete_unplaced_confirm">このショートカットを完全に削除しますか？</string>
     <string name="swap_with_placed">配置済みと入れ替え</string>
@@ -232,4 +232,5 @@
 
     <!-- Error Messages -->
     <string name="error_query">クエリエラー</string>
+    <string name="cannot_open_all_apps_in_edit_mode">編集モード中はアプリ一覧を開けません</string>
 </resources>

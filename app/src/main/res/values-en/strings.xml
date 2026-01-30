@@ -63,7 +63,7 @@
     <string name="no_shortcuts_for_app">No shortcuts available for this app</string>
     <string name="shortcut">Shortcut</string>
     <string name="shortcut_count">Shortcuts (%d)</string>
-    <string name="unplaced_shortcuts">Unplaced Shortcuts</string>
+    <string name="unplaced_shortcuts">Temporary Storage</string>
     <string name="swap_with_placed">Swap with placed</string>
     <string name="place_in_slot">Place in this slot</string>
     <string name="clear_slot">Clear this slot</string>
@@ -220,4 +220,5 @@
 
     <!-- Error Messages -->
     <string name="error_query">Query error</string>
+    <string name="cannot_open_all_apps_in_edit_mode">Cannot open app list in edit mode</string>
 </resources>

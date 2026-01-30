@@ -184,6 +184,8 @@ class ShortcutRepository(private val context: Context) {
 
     /**
      * ショートカットを追加して最初の空きスロットに配置
+     * ※ minSdk 33 のため INSTALL_SHORTCUT 経由（ShortcutReceiverActivity）でしか呼ばれず、
+     *   現代のアプリはすべて requestPinShortcut → MainActivity 経由のため実質到達しない。
      */
     fun addShortcutToFirstEmpty(item: ShortcutItem): Boolean {
         val layout = getLayoutConfig()

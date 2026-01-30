@@ -14,6 +14,8 @@ import com.example.simplecustomlauncher.R
 
 /**
  * 外部アプリからの「ホーム画面に追加」リクエストを受け取るActivity
+ * ※ minSdk 33 のため INSTALL_SHORTCUT 経由でしか呼ばれず、
+ *   現代のアプリはすべて requestPinShortcut → MainActivity 経由のため実質到達しない。
  */
 class ShortcutReceiverActivity : Activity() {
 
@@ -73,7 +75,7 @@ class ShortcutReceiverActivity : Activity() {
                     // ショートカット情報を別途保存（起動時に使う）
                     saveShortcutInfo(item.id, shortcutInfo.id, shortcutInfo.`package`)
 
-                    if (repository.addShortcutToFirstEmpty(item)) {
+                    if (repository. addShortcutToFirstEmpty(item)) {
                         request.accept()
                         Toast.makeText(this, getString(R.string.item_added, item.label), Toast.LENGTH_SHORT).show()
                     } else {

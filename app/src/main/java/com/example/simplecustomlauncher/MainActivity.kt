@@ -9,6 +9,8 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
@@ -61,6 +63,10 @@ class MainActivity : ComponentActivity() {
     private lateinit var premiumManager: PremiumManager
     private lateinit var billingManager: BillingManager
     private lateinit var adManager: AdManager
+
+    /** ホームジェスチャー（スワイプアップ等）でHOME intentを受けたことをCompose側に通知 */
+    private val _homeIntent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val homeIntent = _homeIntent.asSharedFlow()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -127,6 +133,12 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleIntent(intent)
+
+        // ホームジェスチャーでのintentを検知してCompose側に通知
+        if (intent.action == Intent.ACTION_MAIN &&
+            intent.categories?.contains(Intent.CATEGORY_HOME) == true) {
+            _homeIntent.tryEmit(Unit)
+        }
     }
 
     private fun handleIntent(intent: Intent?) {
@@ -191,6 +203,14 @@ fun MainLauncherScreen(
     // 起動時に孤立ピンショートカットをクリーンアップ
     LaunchedEffect(Unit) {
         viewModel.cleanupOrphanedPinShortcuts(context)
+    }
+
+    // ホームジェスチャーでホーム画面に戻る
+    val mainActivity = activity as? MainActivity
+    LaunchedEffect(Unit) {
+        mainActivity?.homeIntent?.collect {
+            viewModel.navigateToHome()
+        }
     }
 
     // 購入完了を監視
