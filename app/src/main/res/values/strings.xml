@@ -234,4 +234,8 @@
     <!-- Error Messages -->
     <string name="error_query">クエリエラー</string>
     <string name="cannot_open_all_apps_in_edit_mode">編集モード中はアプリ一覧を開けません</string>
+
+    <!-- App Context Menu -->
+    <string name="app_info">アプリ情報</string>
+    <string name="uninstall">アンインストール</string>
 </resources>
