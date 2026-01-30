@@ -35,6 +35,7 @@
     <string name="tap_to_edit">Tap to edit</string>
     <string name="tap_to_place">Tap to place</string>
     <string name="tap_to_swap">Tap to swap</string>
+    <string name="empty_slot">Empty</string>
     <string name="no_empty_slot">No empty slot available</string>
     <string name="launch_failed">Failed to launch</string>
     <string name="launch_failed_with_error">Failed to launch: %s</string>

@@ -791,14 +791,20 @@ class MainViewModel(
 
     fun clearSlot(shortcut: ShortcutItem) {
         shortcutRepository.removePlacement(shortcut.id)
-        // 内部機能は未配置に残さない（いつでも「アプリ内機能」から選べるため）
-        if (shortcut.type.isInternalFeature()) {
+        // 再作成が容易なタイプは未配置に残さず削除する
+        if (shortcut.type.shouldDeleteOnRemove()) {
             shortcutRepository.deleteShortcut(shortcut.id)
         }
         refresh()
     }
 
-    private fun ShortcutType.isInternalFeature(): Boolean {
+    /**
+     * 配置解除時にショートカット自体を削除するかどうか
+     * - 内部機能: いつでも「アプリ内機能」から選べるため削除
+     * - APP: アプリ一覧からすぐ再選択できるため削除
+     * - INTENT / PHONE / SMS: 再作成に手間がかかるため一時保管に残す
+     */
+    private fun ShortcutType.shouldDeleteOnRemove(): Boolean {
         return this in listOf(
             ShortcutType.CALENDAR,
             ShortcutType.MEMO,
@@ -806,7 +812,8 @@ class MainViewModel(
             ShortcutType.ALL_APPS,
             ShortcutType.DATE_DISPLAY,
             ShortcutType.TIME_DISPLAY,
-            ShortcutType.SETTINGS
+            ShortcutType.SETTINGS,
+            ShortcutType.APP
         )
     }
 
@@ -816,9 +823,9 @@ class MainViewModel(
         val shortcuts = shortcutRepository.getAllShortcuts()
         currentPlacements.filter { it.pageIndex == pageIndex && it.row == rowIndex }.forEach { placement ->
             shortcutRepository.removePlacement(placement.shortcutId)
-            // 内部機能は完全に削除
+            // 再作成が容易なタイプは完全に削除
             shortcuts[placement.shortcutId]?.let { shortcut ->
-                if (shortcut.type.isInternalFeature()) {
+                if (shortcut.type.shouldDeleteOnRemove()) {
                     shortcutRepository.deleteShortcut(shortcut.id)
                 }
             }
@@ -842,9 +849,9 @@ class MainViewModel(
             .filter { it.pageIndex == pageIndex && it.row == rowIndex && it.column >= newColumns }
             .forEach { placement ->
                 shortcutRepository.removePlacement(placement.shortcutId)
-                // 内部機能は完全に削除
+                // 再作成が容易なタイプは完全に削除
                 shortcuts[placement.shortcutId]?.let { shortcut ->
-                    if (shortcut.type.isInternalFeature()) {
+                    if (shortcut.type.shouldDeleteOnRemove()) {
                         shortcutRepository.deleteShortcut(shortcut.id)
                     }
                 }
@@ -929,9 +936,9 @@ class MainViewModel(
         // このページの配置を全て削除
         currentPlacements.filter { it.pageIndex == pageIndex }.forEach { placement ->
             shortcutRepository.removePlacement(placement.shortcutId)
-            // 内部機能は完全に削除
+            // 再作成が容易なタイプは完全に削除
             shortcuts[placement.shortcutId]?.let { shortcut ->
-                if (shortcut.type.isInternalFeature()) {
+                if (shortcut.type.shouldDeleteOnRemove()) {
                     shortcutRepository.deleteShortcut(shortcut.id)
                 }
             }

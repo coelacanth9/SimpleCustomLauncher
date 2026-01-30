@@ -35,6 +35,7 @@
     <string name="tap_to_edit">タップで編集</string>
     <string name="tap_to_place">タップで配置</string>
     <string name="tap_to_swap">タップで入れ替え</string>
+    <string name="empty_slot">空き</string>
     <string name="no_empty_slot">空きスロットがありません</string>
     <string name="launch_failed">起動できませんでした</string>
     <string name="launch_failed_with_error">起動できませんでした: %s</string>

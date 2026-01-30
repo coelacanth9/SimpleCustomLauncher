@@ -596,8 +596,6 @@ private fun HomeRow(
                         onClick = {
                             if (isEditMode) {
                                 onSlotClickInEditMode(rowConfig.rowIndex, colIndex, null)
-                            } else {
-                                onEmptyClick(colIndex)
                             }
                         }
                     )
@@ -913,11 +911,11 @@ private fun EmptySlotButton(
             contentAlignment = Alignment.Center,
             modifier = Modifier.fillMaxSize()
         ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = stringResource(R.string.add),
-                modifier = Modifier.size(36.dp),
-                tint = MaterialTheme.colorScheme.outline
+            Text(
+                text = if (isEditMode) "＋" else stringResource(R.string.empty_slot),
+                fontSize = if (isEditMode) 28.sp else 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.outline
             )
         }
     }
