@@ -21,8 +21,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
+import com.example.simplecustomlauncher.AppInfo
 import com.example.simplecustomlauncher.R
 import com.example.simplecustomlauncher.ShortcutHelper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * すべてのアプリ画面
@@ -35,23 +38,34 @@ fun AllAppsScreen(
 ) {
     val context = LocalContext.current
     val helper = remember { ShortcutHelper(context) }
-    val apps = remember { helper.getInstalledApps() }
+    var apps by remember { mutableStateOf<List<AppInfo>?>(null) }
     var searchQuery by remember { mutableStateOf("") }
+
+    // バックグラウンドでアプリ一覧を取得
+    LaunchedEffect(Unit) {
+        apps = withContext(Dispatchers.IO) {
+            helper.getInstalledApps()
+        }
+    }
 
     // 優先アプリを上に、それ以外はそのまま
     val sortedApps = remember(apps) {
-        val priority = apps.filter { isPriorityApp(it.packageName) }
-            .sortedBy { getPriorityIndex(it.packageName) }
-        val others = apps.filter { !isPriorityApp(it.packageName) }
-        priority + others
+        apps?.let { list ->
+            val priority = list.filter { isPriorityApp(it.packageName) }
+                .sortedBy { getPriorityIndex(it.packageName) }
+            val others = list.filter { !isPriorityApp(it.packageName) }
+            priority + others
+        }
     }
 
     val filteredApps = remember(searchQuery, sortedApps) {
-        if (searchQuery.isBlank()) {
-            sortedApps
-        } else {
-            sortedApps.filter {
-                it.label.contains(searchQuery, ignoreCase = true)
+        sortedApps?.let { sorted ->
+            if (searchQuery.isBlank()) {
+                sorted
+            } else {
+                sorted.filter {
+                    it.label.contains(searchQuery, ignoreCase = true)
+                }
             }
         }
     }
@@ -74,74 +88,86 @@ fun AllAppsScreen(
             )
         }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            // 検索フィールド
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
+        if (filteredApps == null) {
+            // 読み込み中
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                placeholder = { Text(stringResource(R.string.search_app_name)) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.clear))
-                        }
-                    }
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp)
-            )
-
-            Text(
-                text = stringResource(R.string.app_count, filteredApps.size),
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-            )
-
-            LazyColumn(
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
             ) {
-                items(filteredApps) { app ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                helper.startApp(app.packageName)
-                            },
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Row(
+                CircularProgressIndicator()
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                // 検索フィールド
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    placeholder = { Text(stringResource(R.string.search_app_name)) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.clear))
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Text(
+                    text = stringResource(R.string.app_count, filteredApps.size),
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+
+                LazyColumn(
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(filteredApps) { app ->
+                        Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .clickable {
+                                    helper.startApp(app.packageName)
+                                },
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            app.icon?.let { icon ->
-                                val bitmap = remember(icon) { icon.toBitmap(48, 48) }
-                                Image(
-                                    bitmap = bitmap.asImageBitmap(),
-                                    contentDescription = app.label,
-                                    modifier = Modifier.size(48.dp)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                app.icon?.let { icon ->
+                                    val bitmap = remember(icon) { icon.toBitmap(48, 48) }
+                                    Image(
+                                        bitmap = bitmap.asImageBitmap(),
+                                        contentDescription = app.label,
+                                        modifier = Modifier.size(48.dp)
+                                    )
+                                }
+                                Spacer(Modifier.width(16.dp))
+                                Text(
+                                    text = app.label,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium
                                 )
                             }
-                            Spacer(Modifier.width(16.dp))
-                            Text(
-                                text = app.label,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium
-                            )
                         }
                     }
                 }
