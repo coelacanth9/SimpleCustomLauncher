@@ -332,9 +332,15 @@ fun MainLauncherScreen(
         )
     }
 
-    // サブ画面でシステムの戻るボタン/ジェスチャー → ホームに戻る
-    BackHandler(enabled = viewModel.screenState !is MainScreenState.Home) {
-        viewModel.navigateToHome()
+    // サブ画面 or 編集モードでシステムの戻るボタン/ジェスチャー → ホームに戻る
+    BackHandler(
+        enabled = viewModel.screenState !is MainScreenState.Home || viewModel.isEditMode
+    ) {
+        if (viewModel.isEditMode) {
+            viewModel.exitEditMode()
+        } else {
+            viewModel.navigateToHome()
+        }
     }
 
     // 画面遷移
