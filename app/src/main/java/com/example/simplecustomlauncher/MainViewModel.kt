@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.LauncherApps
 import android.content.pm.LauncherApps.ShortcutQuery
+import android.content.pm.PackageManager
 import android.os.Process
 import android.util.Log
 import androidx.compose.runtime.getValue
@@ -757,6 +758,61 @@ class MainViewModel(
         }
         for ((itemId, _, _) in orphaned) {
             shortcutRepository.deletePinShortcutInfo(itemId)
+        }
+    }
+
+    /**
+     * アプリがアンインストールされた時の処理
+     * 該当パッケージのショートカットを全ページから削除する
+     */
+    fun onPackageRemoved(packageName: String) {
+        val shortcuts = shortcutRepository.getShortcutsByPackageName(packageName)
+        if (shortcuts.isEmpty()) return
+
+        for (shortcut in shortcuts) {
+            if (shortcut.type == ShortcutType.INTENT) {
+                shortcutRepository.deletePinShortcutInfo(shortcut.id)
+            }
+            // deleteShortcut は内部で placement も連動削除する
+            shortcutRepository.deleteShortcut(shortcut.id)
+        }
+        refresh()
+    }
+
+    /**
+     * アンインストール済みアプリのショートカットをクリーンアップする（復帰時に呼ぶ）
+     */
+    fun cleanupUninstalledPackages(context: Context) {
+        val allShortcuts = shortcutRepository.getAllShortcuts().values
+        val pm = context.packageManager
+
+        val targets = allShortcuts.filter {
+            (it.type == ShortcutType.APP || it.type == ShortcutType.INTENT) && it.packageName != null
+        }
+
+        val packageGroups = targets.groupBy { it.packageName!! }
+        var needsRefresh = false
+
+        for ((pkg, shortcuts) in packageGroups) {
+            val isInstalled = try {
+                pm.getPackageInfo(pkg, 0)
+                true
+            } catch (e: PackageManager.NameNotFoundException) {
+                false
+            }
+            if (!isInstalled) {
+                for (shortcut in shortcuts) {
+                    if (shortcut.type == ShortcutType.INTENT) {
+                        shortcutRepository.deletePinShortcutInfo(shortcut.id)
+                    }
+                    shortcutRepository.deleteShortcut(shortcut.id)
+                }
+                needsRefresh = true
+            }
+        }
+
+        if (needsRefresh) {
+            refresh()
         }
     }
 

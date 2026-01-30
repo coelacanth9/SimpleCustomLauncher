@@ -127,4 +127,30 @@ class ShortcutRepositoryTest {
         assertNotNull(repo.getShortcut("shared"))
         assertEquals(1, repo.getPlacementsForPage(1).size)
     }
+
+    // --- A: パッケージ名でショートカットを取得できる ---
+
+    @Test
+    fun getShortcutsByPackageName_returnsMatchingShortcuts() {
+        val app1 = ShortcutItem(id = "app1", type = ShortcutType.APP, label = "App1", packageName = "com.example.target")
+        val app2 = ShortcutItem(id = "app2", type = ShortcutType.APP, label = "App2", packageName = "com.example.other")
+        val intent1 = ShortcutItem(id = "intent1", type = ShortcutType.INTENT, label = "Intent1", packageName = "com.example.target")
+        repo.saveShortcut(app1)
+        repo.saveShortcut(app2)
+        repo.saveShortcut(intent1)
+
+        val result = repo.getShortcutsByPackageName("com.example.target")
+        assertEquals(2, result.size)
+        assertTrue(result.any { it.id == "app1" })
+        assertTrue(result.any { it.id == "intent1" })
+    }
+
+    @Test
+    fun getShortcutsByPackageName_noMatch_returnsEmpty() {
+        val app = ShortcutItem(id = "app", type = ShortcutType.APP, label = "App", packageName = "com.example.other")
+        repo.saveShortcut(app)
+
+        val result = repo.getShortcutsByPackageName("com.example.nonexistent")
+        assertTrue(result.isEmpty())
+    }
 }
