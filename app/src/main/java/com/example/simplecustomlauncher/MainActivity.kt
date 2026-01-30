@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -329,6 +330,11 @@ fun MainLauncherScreen(
                 showWelcomeDialog = false
             }
         )
+    }
+
+    // サブ画面でシステムの戻るボタン/ジェスチャー → ホームに戻る
+    BackHandler(enabled = viewModel.screenState !is MainScreenState.Home) {
+        viewModel.navigateToHome()
     }
 
     // 画面遷移
