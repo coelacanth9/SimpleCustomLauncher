@@ -95,7 +95,7 @@ class BackupManager(private val context: Context) {
             put("themeMode", settingsRepository.themeMode.name)
             put("tapMode", settingsRepository.tapMode.name)
             put("showConfirmDialog", settingsRepository.showConfirmDialog)
-            put("tapFeedback", settingsRepository.tapFeedback)
+            put("vibrationStrength", settingsRepository.vibrationStrength.name)
             put("loopPaging", settingsRepository.loopPagingEnabled)
             put("pageCount", settingsRepository.pageCount)
         }
@@ -221,7 +221,19 @@ class BackupManager(private val context: Context) {
                     TapMode.SINGLE_TAP
                 }
                 settingsRepository.showConfirmDialog = settingsObj.optBoolean("showConfirmDialog", true)
-                settingsRepository.tapFeedback = settingsObj.optBoolean("tapFeedback", true)
+                // vibrationStrength を復元（旧バックアップの tapFeedback boolean にも対応）
+                val vibStrValue = settingsObj.optString("vibrationStrength", "")
+                if (vibStrValue.isNotEmpty()) {
+                    settingsRepository.vibrationStrength = try {
+                        VibrationStrength.valueOf(vibStrValue)
+                    } catch (e: Exception) {
+                        VibrationStrength.MEDIUM
+                    }
+                } else {
+                    // 旧バックアップ: tapFeedback boolean からマイグレーション
+                    val oldTapFeedback = settingsObj.optBoolean("tapFeedback", true)
+                    settingsRepository.vibrationStrength = if (oldTapFeedback) VibrationStrength.MEDIUM else VibrationStrength.OFF
+                }
                 settingsRepository.loopPagingEnabled = settingsObj.optBoolean("loopPaging", false)
                 settingsRepository.pageCount = settingsObj.optInt("pageCount", 1)
             }

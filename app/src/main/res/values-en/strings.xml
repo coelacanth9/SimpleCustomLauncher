@@ -166,6 +166,13 @@
     <string name="confirm_before_launch_desc">Show confirmation dialog before launching</string>
     <string name="haptic_feedback">Haptic feedback</string>
     <string name="haptic_feedback_desc">Vibrate on tap</string>
+    <string name="vibration_strength">Vibration strength</string>
+    <string name="vibration_strength_desc">Vibration feedback strength on tap</string>
+    <string name="vibration_off">OFF</string>
+    <string name="vibration_weak">Weak</string>
+    <string name="vibration_medium">Medium</string>
+    <string name="vibration_strong">Strong</string>
+    <string name="select_vibration_strength">Select vibration strength</string>
     <string name="font_size_settings">Font Size</string>
     <string name="font_size_small">Small (16)</string>
     <string name="font_size_standard">Standard (20)</string>

@@ -28,6 +28,7 @@ import com.example.simplecustomlauncher.data.RestoreResult
 import com.example.simplecustomlauncher.data.SettingsRepository
 import com.example.simplecustomlauncher.data.TapMode
 import com.example.simplecustomlauncher.data.ThemeMode
+import com.example.simplecustomlauncher.data.VibrationStrength
 import com.example.simplecustomlauncher.ui.components.ConfirmDialog
 import com.example.simplecustomlauncher.ui.components.DangerConfirmDialog
 import com.example.simplecustomlauncher.ui.components.InfoDialog
@@ -62,12 +63,13 @@ fun AppSettingsScreen(
 
     var tapMode by remember { mutableStateOf(settingsRepository.tapMode) }
     var showConfirmDialog by remember { mutableStateOf(settingsRepository.showConfirmDialog) }
-    var tapFeedback by remember { mutableStateOf(settingsRepository.tapFeedback) }
+    var vibrationStrength by remember { mutableStateOf(settingsRepository.vibrationStrength) }
     var themeMode by remember { mutableStateOf(settingsRepository.themeMode) }
     var pageCount by remember { mutableStateOf(settingsRepository.pageCount) }
     var loopPagingEnabled by remember { mutableStateOf(settingsRepository.loopPagingEnabled) }
     var showTapModeDialog by remember { mutableStateOf(false) }
     var showThemeModeDialog by remember { mutableStateOf(false) }
+    var showVibrationStrengthDialog by remember { mutableStateOf(false) }
     var showPageCountDialog by remember { mutableStateOf(false) }
     var showPremiumDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
@@ -158,16 +160,19 @@ fun AppSettingsScreen(
                 )
             }
 
-            // タップフィードバック設定
+            // 振動フィードバック強度設定
             item {
-                SettingsSwitchItem(
-                    title = stringResource(R.string.haptic_feedback),
-                    description = stringResource(R.string.haptic_feedback_desc),
-                    checked = tapFeedback,
-                    onCheckedChange = {
-                        tapFeedback = it
-                        settingsRepository.tapFeedback = it
-                    }
+                val vibrationLabel = when (vibrationStrength) {
+                    VibrationStrength.OFF -> stringResource(R.string.vibration_off)
+                    VibrationStrength.WEAK -> stringResource(R.string.vibration_weak)
+                    VibrationStrength.MEDIUM -> stringResource(R.string.vibration_medium)
+                    VibrationStrength.STRONG -> stringResource(R.string.vibration_strong)
+                }
+                SettingsSelectItem(
+                    title = stringResource(R.string.vibration_strength),
+                    description = stringResource(R.string.vibration_strength_desc),
+                    currentValue = vibrationLabel,
+                    onClick = { showVibrationStrengthDialog = true }
                 )
             }
 
@@ -440,6 +445,30 @@ fun AppSettingsScreen(
         )
     }
 
+    // 振動強度選択ダイアログ
+    if (showVibrationStrengthDialog) {
+        val vibOffLabel = stringResource(R.string.vibration_off)
+        val vibWeakLabel = stringResource(R.string.vibration_weak)
+        val vibMediumLabel = stringResource(R.string.vibration_medium)
+        val vibStrongLabel = stringResource(R.string.vibration_strong)
+        SelectionDialog(
+            title = stringResource(R.string.select_vibration_strength),
+            options = listOf(
+                VibrationStrength.OFF to vibOffLabel,
+                VibrationStrength.WEAK to vibWeakLabel,
+                VibrationStrength.MEDIUM to vibMediumLabel,
+                VibrationStrength.STRONG to vibStrongLabel
+            ),
+            selectedOption = vibrationStrength,
+            onSelect = { strength ->
+                vibrationStrength = strength
+                settingsRepository.vibrationStrength = strength
+                showVibrationStrengthDialog = false
+            },
+            onDismiss = { showVibrationStrengthDialog = false }
+        )
+    }
+
     // リセット確認ダイアログ
     if (showResetDialog) {
         DangerConfirmDialog(
@@ -527,7 +556,7 @@ fun AppSettingsScreen(
                         themeMode = settingsRepository.themeMode
                         tapMode = settingsRepository.tapMode
                         showConfirmDialog = settingsRepository.showConfirmDialog
-                        tapFeedback = settingsRepository.tapFeedback
+                        vibrationStrength = settingsRepository.vibrationStrength
                         pageCount = settingsRepository.pageCount
                         loopPagingEnabled = settingsRepository.loopPagingEnabled
                         onRestoreComplete()

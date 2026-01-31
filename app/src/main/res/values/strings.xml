@@ -168,6 +168,13 @@
     <string name="confirm_before_launch_desc">アプリを起動する前に確認ダイアログを表示</string>
     <string name="haptic_feedback">タップ時の振動</string>
     <string name="haptic_feedback_desc">タップ時に振動でフィードバック</string>
+    <string name="vibration_strength">振動の強さ</string>
+    <string name="vibration_strength_desc">タップ時の振動フィードバックの強さ</string>
+    <string name="vibration_off">OFF</string>
+    <string name="vibration_weak">弱</string>
+    <string name="vibration_medium">中</string>
+    <string name="vibration_strong">強</string>
+    <string name="select_vibration_strength">振動の強さを選択</string>
     <string name="font_size_settings">文字サイズ設定</string>
     <string name="font_size_small">小 (16)</string>
     <string name="font_size_standard">標準 (20)</string>
