@@ -1,6 +1,7 @@
 package com.example.simplecustomlauncher.ui.screens
 
-import android.view.HapticFeedbackConstants
+import android.os.VibrationEffect
+import android.os.Vibrator
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -83,6 +84,7 @@ import com.example.simplecustomlauncher.data.ShortcutItem
 import com.example.simplecustomlauncher.data.ShortcutPlacement
 import com.example.simplecustomlauncher.data.ShortcutType
 import com.example.simplecustomlauncher.data.TapMode
+import com.example.simplecustomlauncher.data.VibrationStrength
 import com.example.simplecustomlauncher.ui.components.AddPageConfirmDialog
 import com.example.simplecustomlauncher.ui.components.AddRowDialog
 import com.example.simplecustomlauncher.ui.components.EditModeConfirmDialog
@@ -327,7 +329,7 @@ private fun HomeContent(
     val settingsRepository = remember { SettingsRepository(context) }
     val tapMode = settingsRepository.tapMode
     val showConfirmDialog = settingsRepository.showConfirmDialog
-    val tapFeedback = settingsRepository.tapFeedback
+    val vibrationStrength = settingsRepository.vibrationStrength
 
     // データを読み込み
     val layoutConfig = remember(viewModel.refreshKey) { viewModel.getLayoutConfig() }
@@ -423,7 +425,7 @@ private fun HomeContent(
                     shortcutHelper = shortcutHelper,
                     tapMode = tapMode,
                     showConfirmDialog = showConfirmDialog,
-                    tapFeedback = tapFeedback
+                    vibrationStrength = vibrationStrength
                 )
 
                 // 非プレミアム時、2ページ目以降は半透明カバー
@@ -450,15 +452,25 @@ private fun HomePageContent(
     shortcutHelper: ShortcutHelper,
     tapMode: TapMode,
     showConfirmDialog: Boolean,
-    tapFeedback: Boolean
+    vibrationStrength: VibrationStrength
 ) {
     val context = LocalContext.current
     val view = LocalView.current
 
     // タップフィードバック処理
+    val vibrator = remember { context.getSystemService(Vibrator::class.java) }
     val performFeedback: () -> Unit = {
-        if (tapFeedback) {
-            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+        when (vibrationStrength) {
+            VibrationStrength.OFF -> {}
+            VibrationStrength.WEAK -> vibrator?.vibrate(
+                VibrationEffect.createOneShot(40, VibrationEffect.DEFAULT_AMPLITUDE)
+            )
+            VibrationStrength.MEDIUM -> vibrator?.vibrate(
+                VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE)
+            )
+            VibrationStrength.STRONG -> vibrator?.vibrate(
+                VibrationEffect.createWaveform(longArrayOf(0, 60, 40, 60, 40, 60), -1)
+            )
         }
     }
 

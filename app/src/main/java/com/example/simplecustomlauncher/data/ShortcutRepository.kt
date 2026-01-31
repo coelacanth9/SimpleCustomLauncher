@@ -56,6 +56,13 @@ class ShortcutRepository(private val context: Context) {
         }
     }
 
+    /**
+     * 指定パッケージ名を持つショートカットを全て取得
+     */
+    fun getShortcutsByPackageName(packageName: String): List<ShortcutItem> {
+        return getAllShortcuts().values.filter { it.packageName == packageName }
+    }
+
     private fun getAllShortcutsInternal(): Map<String, ShortcutItem> {
         val json = prefs.getString(KEY_SHORTCUTS, null) ?: return emptyMap()
         return try {

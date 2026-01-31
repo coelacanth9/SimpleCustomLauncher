@@ -1,6 +1,9 @@
 package com.example.simplecustomlauncher
 
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import com.example.simplecustomlauncher.BuildConfig
 import android.content.pm.LauncherApps
 import android.net.Uri
@@ -8,6 +11,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -68,6 +72,21 @@ class MainActivity : ComponentActivity() {
     private val _homeIntent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val homeIntent = _homeIntent.asSharedFlow()
 
+    /** アプリアンインストール通知をCompose側に送信 */
+    private val _packageRemoved = MutableSharedFlow<String>(extraBufferCapacity = 8)
+    val packageRemoved = _packageRemoved.asSharedFlow()
+
+    private val packageRemovedReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action != Intent.ACTION_PACKAGE_REMOVED) return
+            // アプリ更新時は無視
+            if (intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)) return
+            val packageName = intent.data?.schemeSpecificPart ?: return
+            Log.d("MainActivity", "Package removed: $packageName")
+            _packageRemoved.tryEmit(packageName)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -98,6 +117,12 @@ class MainActivity : ComponentActivity() {
         // AdManager 初期化
         adManager = AdManager(this)
         adManager.initialize()
+
+        // アプリアンインストール検知
+        val packageFilter = IntentFilter(Intent.ACTION_PACKAGE_REMOVED).apply {
+            addDataScheme("package")
+        }
+        registerReceiver(packageRemovedReceiver, packageFilter)
 
         // 初回起動時にデフォルトレイアウトを適用
         if (shortcutRepository.isFirstLaunch()) {
@@ -153,6 +178,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        unregisterReceiver(packageRemovedReceiver)
         billingManager.endConnection()
     }
 
@@ -213,6 +239,13 @@ fun MainLauncherScreen(
         }
     }
 
+    // アプリアンインストール検知
+    LaunchedEffect(Unit) {
+        mainActivity?.packageRemoved?.collect { packageName ->
+            viewModel.onPackageRemoved(packageName)
+        }
+    }
+
     // 購入完了を監視
     val purchaseState by billingManager.purchaseState.collectAsState()
     LaunchedEffect(purchaseState) {
@@ -227,6 +260,7 @@ fun MainLauncherScreen(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 viewModel.refreshPremiumStatus()
+                viewModel.cleanupUninstalledPackages(context)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -296,6 +330,19 @@ fun MainLauncherScreen(
                 showWelcomeDialog = false
             }
         )
+    }
+
+    // システムの戻るボタン/ジェスチャーの処理
+    // ランチャーはルートなので常にバックを消費する
+    BackHandler(enabled = true) {
+        if (viewModel.screenState !is MainScreenState.Home) {
+            viewModel.navigateToHome()
+        } else if (viewModel.isEditMode) {
+            viewModel.exitEditMode()
+        } else if (viewModel.currentPageIndex > 0) {
+            viewModel.navigateToPage(0)
+        }
+        // 1ページ目のホーム画面 → 何もしない（バックを消費して終了を防ぐ）
     }
 
     // 画面遷移

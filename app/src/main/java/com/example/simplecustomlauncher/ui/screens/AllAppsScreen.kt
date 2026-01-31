@@ -1,5 +1,8 @@
 package com.example.simplecustomlauncher.ui.screens
 
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -136,6 +140,9 @@ fun AllAppsScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(filteredApps) { app ->
+                        var menuExpanded by remember { mutableStateOf(false) }
+                        val isSelf = app.packageName == context.packageName
+
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -150,7 +157,7 @@ fun AllAppsScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(12.dp),
+                                    .padding(start = 12.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 app.icon?.let { icon ->
@@ -165,8 +172,45 @@ fun AllAppsScreen(
                                 Text(
                                     text = app.label,
                                     fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.weight(1f)
                                 )
+                                Box {
+                                    IconButton(onClick = { menuExpanded = true }) {
+                                        Icon(
+                                            Icons.Default.MoreVert,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    DropdownMenu(
+                                        expanded = menuExpanded,
+                                        onDismissRequest = { menuExpanded = false }
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.app_info)) },
+                                            onClick = {
+                                                menuExpanded = false
+                                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                                    data = Uri.parse("package:${app.packageName}")
+                                                }
+                                                context.startActivity(intent)
+                                            }
+                                        )
+                                        if (!isSelf) {
+                                            DropdownMenuItem(
+                                                text = { Text(stringResource(R.string.uninstall)) },
+                                                onClick = {
+                                                    menuExpanded = false
+                                                    val intent = Intent(Intent.ACTION_DELETE).apply {
+                                                        data = Uri.parse("package:${app.packageName}")
+                                                    }
+                                                    context.startActivity(intent)
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
